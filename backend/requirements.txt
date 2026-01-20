@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+asyncpg
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+qdrant-client
+langchain
+langchain-groq
+langchain-community
+python-dotenv
+email-validator
+bcrypt==3.2.2

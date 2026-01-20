@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: 'Poppins', sans-serif;
+    @apply bg-gray-100 flex justify-center items-center min-h-screen text-base antialiased;
+}
+
+/* 
+  Re-implementation of the sliding panel logic 
+  based on the user's provided original CSS concept
+  but adapted for React state.
+*/
+
+.container {
+    @apply relative overflow-hidden bg-white rounded-[30px] w-[850px] max-w-full min-h-[550px];
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.form-container {
+    @apply absolute top-0 h-full transition-all duration-700 ease-in-out;
+}
+
+/* Sign In form (default visible) */
+.sign-in-container {
+    @apply left-0 w-1/2 z-20;
+}
+
+/* Sign Up form (hidden by default) */
+.sign-up-container {
+    @apply left-0 w-1/2 opacity-0 z-10;
+}
+
+/* Active State: Sign Up becomes visible and moves */
+.container.right-panel-active .sign-in-container {
+    @apply translate-x-full;
+}
+
+.container.right-panel-active .sign-up-container {
+    @apply translate-x-full opacity-100 z-50;
+    animation: show 0.6s;
+}
+
+@keyframes show {
+
+    0%,
+    49.99% {
+        opacity: 0;
+        z-index: 1;
+    }
+
+    50%,
+    100% {
+        opacity: 1;
+        z-index: 50;
+    }
+}
+
+/* Overlay Container */
+.overlay-container {
+    @apply absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-700 ease-in-out z-[100];
+}
+
+.container.right-panel-active .overlay-container {
+    @apply -translate-x-full;
+}
+
+/* Overlay Gradients */
+.overlay {
+    @apply relative -left-full h-full w-[200%] transform transition-transform duration-700 ease-in-out text-white;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    /* Default Student Gradient */
+}
+
+/* HR Gradient Override */
+.hr-mode .overlay {
+    background: linear-gradient(to right, #2c3e50, #4ca1af);
+    /* Professional HR Gradient */
+}
+
+.container.right-panel-active .overlay {
+    @apply translate-x-1/2;
+}
+
+/* Overlay Panels (Text) */
+.overlay-panel {
+    @apply absolute flex flex-col items-center justify-center text-center px-10 top-0 h-full w-1/2 transform transition-transform duration-700 ease-in-out;
+}
+
+.overlay-left {
+    @apply -translate-x-[20%];
+}
+
+.container.right-panel-active .overlay-left {
+    @apply translate-x-0;
+}
+
+.overlay-right {
+    @apply right-0 translate-x-0;
+}
+
+.container.right-panel-active .overlay-right {
+    @apply translate-x-[20%];
+}
+
+/* Button & Input Styles for Consistency */
+.btn-grad {
+    @apply rounded-full border border-white bg-transparent text-white text-xs font-bold py-3 px-11 uppercase tracking-wider transition-transform ease-in active:scale-95 focus:outline-none;
+}
+
+.btn-solid {
+    @apply rounded-full bg-indigo-600 text-white text-xs font-bold py-3 px-11 uppercase tracking-wider transition-transform ease-in active:scale-95 focus:outline-none mt-4 shadow-lg;
+}
+
+.hr-mode .btn-solid {
+    @apply bg-slate-700;
+}
+
+.input-field {
+    @apply bg-gray-100 border-none px-4 py-3 my-2 w-full rounded-lg outline-none text-sm;
+}

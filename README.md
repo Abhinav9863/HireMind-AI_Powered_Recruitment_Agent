@@ -1,6 +1,8 @@
 # HireMind
 
-**HireMind** is an AI-powered recruitment agent designed for **SayOne Technologies**.
+**HireMind** is an AI-powered student recruitment platform.
+- **HR Designers**: Post jobs and requirements.
+- **Students**: Apply and undergo AI-driven interviews.
 
 ## Tech Stack
 - **Frontend**: React, Vite, Tailwind CSS

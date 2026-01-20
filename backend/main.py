@@ -6,8 +6,7 @@ from contextlib import asynccontextmanager
 
 from database import init_db, get_session
 from models import User
-from schemas import UserCreate, UserRead, Token
-from auth import get_password_hash, create_access_token, verify_password
+from routers import interview, jobs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,6 +14,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="HireMind API", lifespan=lifespan)
+
+app.include_router(interview.router)
+app.include_router(jobs.router)
 
 # CORS (Allow Frontend to connect)
 app.add_middleware(

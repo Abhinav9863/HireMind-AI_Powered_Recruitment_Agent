@@ -24,3 +24,36 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
     role: Optional[str] = None
+class ChatRequest(BaseModel):
+    message: str
+    context: Optional[str] = None # e.g. Job Title
+
+class ChatResponse(BaseModel):
+    reply: str
+
+# Job Schemas
+class JobCreate(BaseModel):
+    title: str
+    description: str
+    location: str
+    salary_range: str
+    job_type: str
+
+class JobRead(JobCreate):
+    id: int
+    company: str
+    hr_id: int
+    created_at: datetime
+
+# Application Schemas
+from datetime import datetime
+class ApplicationCreate(BaseModel):
+    job_id: int
+
+class ApplicationRead(BaseModel):
+    id: int
+    job_id: int
+    student_id: int
+    ats_score: int
+    ats_feedback: Optional[str]
+    created_at: datetime

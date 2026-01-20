@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { LogOut, Send, Paperclip, FileText, User, Briefcase, ChevronRight, UploadCloud, CheckCircle } from 'lucide-react';
 
 const MOCK_JOBS = [
@@ -98,7 +99,7 @@ const StudentDashboard = () => {
         }
     };
 
-    const handleSendMessage = (e) => {
+    const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!input.trim()) return;
 
@@ -107,11 +108,19 @@ const StudentDashboard = () => {
         setMessages(prev => [...prev, userMsg]);
         setInput('');
 
-        // Mock AI Response
-        setTimeout(() => {
-            const aiMsg = { id: Date.now() + 1, sender: 'ai', text: "I'm processing that... (AI Backend integration pending)" };
+        try {
+            const response = await axios.post('http://localhost:8000/interview/chat', {
+                message: input,
+                context: selectedJob ? selectedJob.title : "General Interview"
+            });
+
+            const aiMsg = { id: Date.now() + 1, sender: 'ai', text: response.data.reply };
             setMessages(prev => [...prev, aiMsg]);
-        }, 1000);
+        } catch (error) {
+            console.error("AI Error:", error);
+            const errorMsg = { id: Date.now() + 1, sender: 'ai', text: "Sorry, I'm having trouble connecting to the interview server." };
+            setMessages(prev => [...prev, errorMsg]);
+        }
     };
 
     return (
@@ -183,7 +192,7 @@ const StudentDashboard = () => {
                 {/* Header */}
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
                     <h2 className="text-xl font-bold text-gray-800">
-                        {activeTab === 'jobs' ? 'Available Opportunities' : selectedJob ? `Interview: ${selectedJob.title}` : 'Interview Chat'}
+                        {activeTab === 'jobs' ? 'Available Opportunities' : selectedJob ? `${selectedJob.title} - ${selectedJob.company}` : 'Interview Chat'}
                     </h2>
                     {selectedJob && activeTab === 'chat' && (
                         <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -235,8 +244,8 @@ const StudentDashboard = () => {
                                 {messages.map(msg => (
                                     <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[80%] rounded-2xl p-5 text-sm leading-relaxed shadow-sm ${msg.sender === 'user'
-                                                ? 'bg-indigo-600 text-white rounded-tr-none'
-                                                : 'bg-gray-100 text-gray-800 border border-gray-200 rounded-tl-none'
+                                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                                            : 'bg-gray-100 text-gray-800 border border-gray-200 rounded-tl-none'
                                             }`}>
                                             {msg.text}
                                         </div>

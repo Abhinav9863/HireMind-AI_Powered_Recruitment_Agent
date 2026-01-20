@@ -62,22 +62,49 @@ const AuthPage = () => {
         }
     }
 
+    const handleSignup = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        try {
+            await axios.post(`${API_URL}/auth/signup`, {
+                email: formData.email,
+                password: formData.password,
+                full_name: formData.fullName,
+                role: isHrMode ? 'hr' : 'student',
+                company_name: isHrMode ? formData.companyName : undefined,
+                university: !isHrMode ? formData.university : undefined
+            });
+
+            // New logic: Signup doesn't return token immediately
+            setIsSignUp(false); // Switch to login form
+            setError('');
+            alert("Account created! Please check your email/console to verify your account before logging in.");
+
+        } catch (err) {
+            if (err.response && err.response.data && err.response.data.detail) {
+                setError(err.response.data.detail); // e.g. "Public domains not allowed"
+            } else {
+                setError('Registration failed. Please try again.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
+        if (isSignUp) {
+            await handleSignup(e); // Delegate to handleSignup if it's a signup attempt
+            return; // Exit handleAuth after signup attempt
+        }
+
         try {
-            const endpoint = isSignUp ? '/auth/signup' : '/auth/login';
-            const payload = isSignUp ? {
-                email: formData.email,
-                password: formData.password,
-                full_name: formData.fullName,
-                role: isHrMode ? 'hr' : 'student',
-                company_name: isHrMode ? formData.companyName : null,
-                university: !isHrMode ? formData.university : null
-            } : {
-                // Login payload matches UserCreate simplified schema for now, or just email/password
+            const endpoint = '/auth/login'; // Only login handled here now
+            const payload = {
                 email: formData.email,
                 password: formData.password,
                 full_name: "Login User", // Dummy for login schema validation if re-using UserCreate

@@ -42,29 +42,54 @@ async def signup(user: UserCreate, session: AsyncSession = Depends(get_session))
             detail="Email already registered"
         )
     
+import secrets
+    
+    # 1. HR Domain Restriction
+    if user.role == UserRole.HR:
+        public_domains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"]
+        domain = user.email.split("@")[-1]
+        if domain in public_domains:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="HR accounts must use a corporate email address (e.g., name@company.com). Public domains are not allowed."
+            )
+
     # Create new user
     hashed_password = get_password_hash(user.password)
+    verification_token = secrets.token_urlsafe(32)
+    
     db_user = User(
         email=user.email,
         full_name=user.full_name,
         hashed_password=hashed_password,
         role=user.role,
         company_name=user.company_name,
-        university=user.university
+        university=user.university,
+        is_verified=False, # Enforce verification
+        verification_token=verification_token
     )
     
     session.add(db_user)
     await session.commit()
     await session.refresh(db_user)
     
-    # Generate Token immediately (Auto-login)
-    access_token = create_access_token(data={"sub": db_user.email, "role": db_user.role.value})
-    return {"access_token": access_token, "token_type": "bearer"}
+    # Simulate Sending Email (Log it)
+    print(f"--- EMAIL SIMULATION ---")
+    print(f"To: {db_user.email}")
+    print(f"Subject: Verify your HireMind Account")
+    print(f"Link: http://localhost:8000/auth/verify?token={verification_token}")
+    print(f"------------------------")
+
+    return {"access_token": "", "token_type": "bearer"} # Don't login yet
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    role: str # 'student' or 'hr' - Enforced context
 
 @app.post("/auth/login", response_model=Token)
-async def login(user_data: UserCreate, session: AsyncSession = Depends(get_session)):
-    # Note: Using UserCreate here just for input structure, usually OAuth2PasswordRequestForm is stricter
-    # But for custom JSON login, we'll verify email/password manually.
+async def login(user_data: LoginRequest, session: AsyncSession = Depends(get_session)):
     
     result = await session.execute(select(User).where(User.email == user_data.email))
     user = result.scalars().first()
@@ -75,13 +100,44 @@ async def login(user_data: UserCreate, session: AsyncSession = Depends(get_sessi
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+    
+    # 2. Enforce RBAC (Context Check)
+    # If user tries to login as HR but is a Student (or vice versa), block them.
+    if user.role.value != user_data.role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access Denied: You are registered as a {user.role.value.capitalize()}, but are trying to login to the {user_data.role.capitalize()} Portal."
+        )
+
+    # 3. Enforce Email Verification
+    if not user.is_verified:
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please check your inbox for the verification link."
+        )
+
     access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer"}
 
 from pydantic import BaseModel
 class MockLoginRequest(BaseModel):
     role: str
+
+
+@app.get("/auth/verify")
+async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.verification_token == token))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+        
+    user.is_verified = True
+    user.verification_token = None
+    session.add(user)
+    await session.commit()
+    
+    return {"message": "Email verified successfully! You can now login."}
 
 @app.post("/auth/google-mock", response_model=Token)
 async def google_mock_login(request: MockLoginRequest, session: AsyncSession = Depends(get_session)):
@@ -105,7 +161,8 @@ async def google_mock_login(request: MockLoginRequest, session: AsyncSession = D
             hashed_password=hashed_password,
             role=UserRole.HR if role_str == "hr" else UserRole.STUDENT,
             company_name="Google Demo Inc" if role_str == "hr" else None,
-            university="Stanford University" if role_str != "hr" else None
+            university="Stanford University" if role_str != "hr" else None,
+            is_verified=True # Auto-verify demo accounts
         )
         session.add(user)
         await session.commit()

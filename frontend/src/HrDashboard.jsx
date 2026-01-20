@@ -1,118 +1,210 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Upload, FileText, TrendingUp, Users, Search } from 'lucide-react';
+import axios from 'axios';
+import { LayoutDashboard, PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, Building } from 'lucide-react';
 
 const HrDashboard = () => {
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('post-job'); // 'post-job' | 'candidates'
+    const [jobs, setJobs] = useState([]);
+    const [formData, setFormData] = useState({
+        title: '',
+        company: '', // Will be overridden by backend or we can let them edit if needed
+        description: '',
+        location: '',
+        salary_range: '',
+        job_type: 'Full-time'
+    });
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        fetchJobs();
+    }, []);
+
+    const fetchJobs = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await axios.get('http://localhost:8000/jobs/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setJobs(response.data);
+        } catch (error) {
+            console.error("Failed to fetch jobs", error);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        navigate('/hr');
+        navigate('/');
     };
 
-    // Dummy Candidate Data
-    const students = [
-        { id: 1, name: "Alice Johnson", score: 92, strongField: "Backend System Design", status: "Recommended" },
-        { id: 2, name: "Bob Smith", score: 78, strongField: "React Frontend", status: "Review" },
-        { id: 3, name: "Charlie Davis", score: 65, strongField: "Data Analysis", status: "Rejected" },
-    ];
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handlePostJob = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage('');
+        const token = localStorage.getItem('token');
+        try {
+            const response = await axios.post('http://localhost:8000/jobs/', formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage('Job Posted Successfully!');
+            setFormData({ title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time' });
+            // Refresh job list
+        } catch (error) {
+            console.error(error);
+            setMessage('Failed to post job.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-poppins">
-            {/* Navbar */}
-            <nav className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center sticky top-0 z-50">
-                <div className="flex items-center gap-2 text-xl font-bold">
-                    <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/50">HM</div>
-                    <span className="tracking-tight">HireMind <span className="font-normal text-slate-400">Admin</span></span>
+        <div className="flex h-screen bg-gray-50 font-poppins text-base">
+            {/* Sidebar */}
+            <aside className="w-80 bg-white border-r border-gray-200 flex flex-col hidden md:flex shrink-0">
+                <div className="p-6 border-b border-gray-100">
+                    <h1 className="text-2xl font-bold text-indigo-900">HireMind HR</h1>
+                    <p className="text-xs text-gray-400 mt-1">Recruiter Panel</p>
                 </div>
-                <button onClick={handleLogout} className="text-slate-400 hover:text-white transition-colors text-sm font-medium flex gap-2">
-                    <LogOut size={18} /> Logout
-                </button>
-            </nav>
-
-            <main className="max-w-7xl mx-auto py-10 px-6">
-
-                <h1 className="text-2xl font-bold text-slate-800 mb-8">Recruitment Overview</h1>
-
-                {/* Upload Policy Section */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-10 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
-
-                    <div className="flex justify-between items-start relative z-10">
-                        <div>
-                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                <FileText className="text-indigo-600" size={24} /> Company Policy Knowledge Base
-                            </h2>
-                            <p className="text-slate-500 text-sm mt-2 max-w-xl">
-                                Upload your company's HR policy, code of conduct, or technical guidelines.
-                                The AI Agent uses this to answer student questions accurately during the interview.
-                            </p>
-                        </div>
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                            <Upload size={18} /> Upload PDF
+                <div className="p-6 flex-1">
+                    <nav className="space-y-2">
+                        <button
+                            onClick={() => setActiveTab('post-job')}
+                            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-sm font-medium ${activeTab === 'post-job' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <PlusCircle size={18} /> Post a Job
                         </button>
-                    </div>
+                        <button
+                            onClick={() => setActiveTab('candidates')}
+                            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-sm font-medium ${activeTab === 'candidates' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Users size={18} /> View Candidates
+                        </button>
+                    </nav>
                 </div>
-
-                {/* Leaderboard Section */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gray-50/50">
-                        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <TrendingUp className="text-emerald-500" size={24} /> Candidate Leaderboard
-                        </h2>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input type="text" placeholder="Search candidates..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                        </div>
-                    </div>
-
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                                <th className="p-4 border-b border-slate-200">Rank</th>
-                                <th className="p-4 border-b border-slate-200">Candidate Name</th>
-                                <th className="p-4 border-b border-slate-200">Strongest Field</th>
-                                <th className="p-4 border-b border-slate-200">AI Score</th>
-                                <th className="p-4 border-b border-slate-200">Status</th>
-                                <th className="p-4 border-b border-slate-200">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {students.map((student, index) => (
-                                <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                                    <td className="p-4 font-bold text-slate-400">#{index + 1}</td>
-                                    <td className="p-4 font-medium text-slate-800 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
-                                            {student.name.charAt(0)}
-                                        </div>
-                                        {student.name}
-                                    </td>
-                                    <td className="p-4 text-slate-600 text-sm">{student.strongField}</td>
-                                    <td className="p-4">
-                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${student.score >= 90 ? 'bg-emerald-100 text-emerald-700' :
-                                                student.score >= 70 ? 'bg-amber-100 text-amber-700' :
-                                                    'bg-red-100 text-red-700'
-                                            }`}>
-                                            {student.score}/100
-                                        </span>
-                                    </td>
-                                    <td className="p-4">
-                                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                                            {student.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4">
-                                        <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline">
-                                            View Report
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="p-4 border-t border-gray-100">
+                    <button onClick={handleLogout} className="flex items-center justify-center gap-2 w-full text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors text-sm font-medium">
+                        <LogOut size={16} /> Logout
+                    </button>
                 </div>
+            </aside>
 
+            {/* Main Content */}
+            <main className="flex-1 overflow-auto p-8">
+                <header className="mb-8 flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                        {activeTab === 'post-job' ? 'Create New Position' : 'Candidate Applications'}
+                    </h2>
+                </header>
+
+                {activeTab === 'post-job' && (
+                    <div className="max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                        <form onSubmit={handlePostJob} className="space-y-6">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        value={formData.title}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        placeholder="e.g. Senior React Developer"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                                    <select
+                                        name="job_type"
+                                        value={formData.job_type}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    >
+                                        <option>Full-time</option>
+                                        <option>Part-time</option>
+                                        <option>Contract</option>
+                                        <option>Internship</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                                        <input
+                                            type="text"
+                                            name="location"
+                                            value={formData.location}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full pl-10 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            placeholder="e.g. Remote, NY"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Salary Range</label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                                        <input
+                                            type="text"
+                                            name="salary_range"
+                                            value={formData.salary_range}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full pl-10 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            placeholder="e.g. $100k - $120k"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    required
+                                    rows="6"
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="Enter detailed job description..."
+                                ></textarea>
+                            </div>
+
+                            {message && (
+                                <div className={`p-4 rounded-xl text-sm font-medium ${message.includes('Success') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                    {message}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-indigo-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-800 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50"
+                            >
+                                {loading ? 'Posting...' : 'Post Job'}
+                            </button>
+                        </form>
+                    </div>
+                )}
+
+                {activeTab === 'candidates' && (
+                    <div className="text-center py-20 text-gray-500">
+                        <Users size={48} className="mx-auto mb-4 opacity-20" />
+                        <h3 className="text-xl font-bold text-gray-700">No Candidates Yet</h3>
+                        <p>Applicants will appear here once they apply to your jobs.</p>
+                    </div>
+                )}
             </main>
         </div>
     );

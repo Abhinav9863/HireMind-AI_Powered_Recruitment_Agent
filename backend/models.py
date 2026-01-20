@@ -13,6 +13,8 @@ class User(SQLModel, table=True):
     full_name: str
     hashed_password: str
     role: UserRole
+    is_verified: bool = Field(default=False)
+    verification_token: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Profile fields (Optional based on role)

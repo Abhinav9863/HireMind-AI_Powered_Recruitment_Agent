@@ -3,9 +3,12 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Production Security Configuration
-SECRET_KEY = "supersecretkey" # In production, this would come from os.getenv
+SECRET_KEY = os.getenv("SECRET_KEY") # In production, this would come from os.getenv
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

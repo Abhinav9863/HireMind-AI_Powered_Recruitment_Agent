@@ -2,9 +2,12 @@ from sqlmodel import SQLModel, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Database URL (Matches docker-compose services)
-DATABASE_URL = "postgresql+asyncpg://hiremind:password@localhost:5435/hiremind_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 

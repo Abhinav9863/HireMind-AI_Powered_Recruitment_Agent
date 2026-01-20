@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    @apply bg-gray-100 flex justify-center items-center min-h-screen text-base antialiased;
+    @apply bg-gray-100 text-base antialiased;
 }
 
 /* 

@@ -107,8 +107,7 @@ const AuthPage = () => {
             const payload = {
                 email: formData.email,
                 password: formData.password,
-                full_name: "Login User", // Dummy for login schema validation if re-using UserCreate
-                role: isHrMode ? 'hr' : 'student' // Dummy
+                role: isHrMode ? 'hr' : 'student'
             };
 
             const response = await axios.post(`${API_URL}${endpoint}`, payload);

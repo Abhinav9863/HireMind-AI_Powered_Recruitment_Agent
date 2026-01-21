@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import datetime
 from models import UserRole
 
 class UserCreate(BaseModel):
@@ -44,6 +45,7 @@ class JobRead(JobCreate):
     company: str
     hr_id: int
     created_at: datetime
+    policy_path: Optional[str] = None
 
 # Application Schemas
 from datetime import datetime
@@ -56,4 +58,20 @@ class ApplicationRead(BaseModel):
     student_id: int
     ats_score: int
     ats_feedback: Optional[str]
+    status: str
     created_at: datetime
+    
+class ApplicationReadWithStudent(ApplicationRead):
+    student_name: str
+    student_email: str
+
+class ApplicationDetail(ApplicationReadWithStudent):
+    resume_path: Optional[str]
+    resume_text: Optional[str]
+    candidate_info: Optional[dict]
+    chat_history: Optional[list]
+    ats_report: Optional[dict]
+    interview_step: str
+
+class StatusUpdate(BaseModel):
+    status: str

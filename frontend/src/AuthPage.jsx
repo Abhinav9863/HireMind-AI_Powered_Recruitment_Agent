@@ -144,12 +144,6 @@ const AuthPage = () => {
                     <form className="flex flex-col items-center w-full h-full justify-center" onSubmit={handleAuth}>
                         <h1 className="text-2xl font-bold mb-4">Create {title} Account</h1>
 
-                        {/* Google Login Button */}
-                        <button type="button" onClick={handleGoogleLogin} className="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-lg py-2.5 mb-4 hover:bg-gray-50 transition-colors">
-                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="google logo" />
-                            <span className="text-sm font-medium text-gray-700">Sign up with Google</span>
-                        </button>
-
                         <span className="text-xs text-gray-500 mb-2">or use your email for registration</span>
 
                         <input name="fullName" type="text" placeholder="Full Name" className="input-field" required onChange={handleInputChange} />
@@ -180,12 +174,6 @@ const AuthPage = () => {
                 <div className="form-container sign-in-container flex flex-col items-center justify-center p-12 bg-white text-center">
                     <form className="flex flex-col items-center w-full h-full justify-center" onSubmit={handleAuth}>
                         <h1 className="text-2xl font-bold mb-4">{title} Login</h1>
-
-                        {/* Google Login Button */}
-                        <button type="button" onClick={handleGoogleLogin} className="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-lg py-2.5 mb-4 hover:bg-gray-50 transition-colors">
-                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="google logo" />
-                            <span className="text-sm font-medium text-gray-700">Sign in with Google</span>
-                        </button>
 
                         <span className="text-xs text-gray-500 mb-2">or use your account</span>
 

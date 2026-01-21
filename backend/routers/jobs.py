@@ -1,39 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form
+import shutil
+import os
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
 
 from database import get_session
-from models import Job, User, UserRole
-from schemas import JobCreate, JobRead, TokenData
-from auth import oauth2_scheme, verify_token # We need to expose verify_token or re-implement dependency
-
-# Temporarily re-implementing get_current_user dependency here if not in auth.py
-# Ideally, move get_current_user to auth.py and import it.
-from jose import jwt, JWTError
-from auth import SECRET_KEY, ALGORITHM
-
-async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        role: str = payload.get("role")
-        if email is None:
-            raise credentials_exception
-        token_data = TokenData(email=email, role=role)
-    except JWTError:
-        raise credentials_exception
-        
-    result = await session.execute(select(User).where(User.email == token_data.email))
-    user = result.scalars().first()
-    if user is None:
-        raise credentials_exception
-    return user
+from models import Job, User, UserRole, Application
+from schemas import JobCreate, JobRead, TokenData, ApplicationReadWithStudent
+from auth import oauth2_scheme, get_current_user
 
 router = APIRouter(
     prefix="/jobs",
@@ -41,17 +17,34 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=JobRead)
-async def create_job(job: JobCreate, current_user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+async def create_job(
+    title: str = Form(...),
+    description: str = Form(...),
+    location: str = Form(...),
+    salary_range: str = Form(...),
+    job_type: str = Form(...),
+    policy_file: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user), 
+    session: AsyncSession = Depends(get_session)
+):
     if current_user.role != UserRole.HR:
         raise HTTPException(status_code=403, detail="Only HR can post jobs")
     
+    policy_path = None
+    if policy_file:
+        file_location = f"uploads/{policy_file.filename}"
+        with open(file_location, "wb+") as file_object:
+            shutil.copyfileobj(policy_file.file, file_object)
+        policy_path = file_location
+
     new_job = Job(
-        title=job.title,
+        title=title,
         company=current_user.company_name or "Unknown Company",
-        description=job.description,
-        location=job.location,
-        salary_range=job.salary_range,
-        job_type=job.job_type,
+        description=description,
+        location=location,
+        salary_range=salary_range,
+        job_type=job_type,
+        policy_path=policy_path,
         hr_id=current_user.id
     )
     
@@ -65,3 +58,44 @@ async def get_jobs(session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(Job).order_by(Job.created_at.desc()))
     jobs = result.scalars().all()
     return jobs
+
+@router.get("/my", response_model=List[JobRead])
+async def get_my_jobs(current_user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    if current_user.role != UserRole.HR:
+        raise HTTPException(status_code=403, detail="Only HR can access this")
+        
+    result = await session.execute(select(Job).where(Job.hr_id == current_user.id).order_by(Job.created_at.desc()))
+    jobs = result.scalars().all()
+    return jobs
+
+@router.get("/{job_id}/applications", response_model=List[ApplicationReadWithStudent])
+async def get_job_applications(job_id: int, current_user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    if current_user.role != UserRole.HR:
+        raise HTTPException(status_code=403, detail="Only HR can access this")
+    
+    # Verify the job belongs to this HR
+    result = await session.execute(select(Job).where(Job.id == job_id))
+    job = result.scalars().first()
+    
+    if not job:
+          raise HTTPException(status_code=404, detail="Job not found")
+          
+    if job.hr_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view applications for your own jobs")
+        
+    # Fetch applications with student details
+    stmt = (
+        select(Application, User)
+        .join(User, Application.student_id == User.id)
+        .where(Application.job_id == job_id)
+    )
+    results = await session.execute(stmt)
+    
+    final_results = []
+    for application, student in results:
+        app_dict = application.dict()
+        app_dict["student_name"] = student.full_name
+        app_dict["student_email"] = student.email
+        final_results.append(app_dict)
+        
+    return final_results

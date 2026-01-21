@@ -9,7 +9,7 @@ load_dotenv()
 # Database URL (Matches docker-compose services)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(DATABASE_URL, echo=False, future=True)
 
 async def init_db():
     async with engine.begin() as conn:

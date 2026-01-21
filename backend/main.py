@@ -5,8 +5,12 @@ from sqlalchemy.future import select
 from contextlib import asynccontextmanager
 
 from database import init_db, get_session
-from models import User
-from routers import interview, jobs
+from models import User, UserRole
+from schemas import UserCreate, Token
+from auth import get_password_hash, create_access_token, verify_password
+from routers import interview, jobs, ats, applications
+import secrets
+from pydantic import BaseModel, EmailStr
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,6 +21,8 @@ app = FastAPI(title="HireMind API", lifespan=lifespan)
 
 app.include_router(interview.router)
 app.include_router(jobs.router)
+app.include_router(ats.router)
+app.include_router(applications.router)
 
 # CORS (Allow Frontend to connect)
 app.add_middleware(
@@ -26,6 +32,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Create uploads directory if not exists
+UPLOAD_DIR = "uploads"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 def read_root():
@@ -41,8 +57,6 @@ async def signup(user: UserCreate, session: AsyncSession = Depends(get_session))
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
-import secrets
     
     # 1. HR Domain Restriction
     if user.role == UserRole.HR:
@@ -65,7 +79,7 @@ import secrets
         role=user.role,
         company_name=user.company_name,
         university=user.university,
-        is_verified=False, # Enforce verification
+        is_verified=True, # Enforce verification -> Disabled for now
         verification_token=verification_token
     )
     
@@ -110,11 +124,11 @@ async def login(user_data: LoginRequest, session: AsyncSession = Depends(get_ses
         )
 
     # 3. Enforce Email Verification
-    if not user.is_verified:
-         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email not verified. Please check your inbox for the verification link."
-        )
+    # if not user.is_verified:
+    #      raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="Email not verified. Please check your inbox for the verification link."
+    #     )
 
     access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -139,34 +153,34 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
     
     return {"message": "Email verified successfully! You can now login."}
 
-@app.post("/auth/google-mock", response_model=Token)
-async def google_mock_login(request: MockLoginRequest, session: AsyncSession = Depends(get_session)):
-    """
-    Simulates a Google Login for demonstration purposes.
-    Automatically logs in (or creates) a user: demo_student@gmail.com or demo_hr@gmail.com
-    """
-    role_str = request.role
-    email = f"demo_{role_str}@gmail.com"
-    
-    # Check if demo user exists
-    result = await session.execute(select(User).where(User.email == email))
-    user = result.scalars().first()
-    
-    if not user:
-        # Create Demo User on the fly
-        hashed_password = get_password_hash("demo_password")
-        user = User(
-            email=email,
-            full_name=f"Demo {role_str.capitalize()}",
-            hashed_password=hashed_password,
-            role=UserRole.HR if role_str == "hr" else UserRole.STUDENT,
-            company_name="Google Demo Inc" if role_str == "hr" else None,
-            university="Stanford University" if role_str != "hr" else None,
-            is_verified=True # Auto-verify demo accounts
-        )
-        session.add(user)
-        await session.commit()
-        await session.refresh(user)
-    
-    access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
-    return {"access_token": access_token, "token_type": "bearer"}
+# @app.post("/auth/google-mock", response_model=Token)
+# async def google_mock_login(request: MockLoginRequest, session: AsyncSession = Depends(get_session)):
+#     """
+#     Simulates a Google Login for demonstration purposes.
+#     Automatically logs in (or creates) a user: demo_student@gmail.com or demo_hr@gmail.com
+#     """
+#     role_str = request.role
+#     email = f"demo_{role_str}@gmail.com"
+#     
+#     # Check if demo user exists
+#     result = await session.execute(select(User).where(User.email == email))
+#     user = result.scalars().first()
+#     
+#     if not user:
+#         # Create Demo User on the fly
+#         hashed_password = get_password_hash("demo_password")
+#         user = User(
+#             email=email,
+#             full_name=f"Demo {role_str.capitalize()}",
+#             hashed_password=hashed_password,
+#             role=UserRole.HR if role_str == "hr" else UserRole.STUDENT,
+#             company_name="Google Demo Inc" if role_str == "hr" else None,
+#             university="Stanford University" if role_str != "hr" else None,
+#             is_verified=True # Auto-verify demo accounts
+#         )
+#         session.add(user)
+#         await session.commit()
+#         await session.refresh(user)
+#     
+#     access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
+#     return {"access_token": access_token, "token_type": "bearer"}

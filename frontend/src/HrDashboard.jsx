@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_URL } from './config';
 import { PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, X, MessageSquare, FileText, CheckCircle, AlertCircle, ChevronRight, Download } from 'lucide-react';
 
 const HrDashboard = () => {
@@ -37,7 +38,7 @@ const HrDashboard = () => {
     const fetchMyJobs = async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.get('http://localhost:8000/jobs/my', {
+            const response = await axios.get(`${API_URL}/jobs/my`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMyJobs(response.data);
@@ -49,7 +50,7 @@ const HrDashboard = () => {
     const fetchApplications = async (jobId) => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.get(`http://localhost:8000/jobs/${jobId}/applications`, {
+            const response = await axios.get(`${API_URL}/jobs/${jobId}/applications`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setApplications(response.data);
@@ -63,7 +64,7 @@ const HrDashboard = () => {
         setSelectedAppId(appId);
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.get(`http://localhost:8000/applications/${appId}`, {
+            const response = await axios.get(`${API_URL}/applications/${appId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSelectedAppDetail(response.data);
@@ -119,7 +120,7 @@ const HrDashboard = () => {
         }
 
         try {
-            await axios.post('http://localhost:8000/jobs/', data, {
+            await axios.post(`${API_URL}/jobs/`, data, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMessage('Job Posted Successfully!');
@@ -140,7 +141,7 @@ const HrDashboard = () => {
     const handleUpdateStatus = async (appId, newStatus) => {
         const token = localStorage.getItem('token');
         try {
-            await axios.put(`http://localhost:8000/applications/${appId}/status`,
+            await axios.put(`${API_URL}/applications/${appId}/status`,
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -243,8 +244,8 @@ const HrDashboard = () => {
                                 chat_history.map((msg, idx) => (
                                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[85%] p-3 rounded-lg text-sm ${msg.role === 'user'
-                                                ? 'bg-indigo-600 text-white rounded-tr-none'
-                                                : 'bg-white text-gray-800 border border-gray-200 shadow-sm rounded-tl-none'
+                                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                                            : 'bg-white text-gray-800 border border-gray-200 shadow-sm rounded-tl-none'
                                             }`}>
                                             {msg.content || msg.reply || msg.question || msg.answer}
 
@@ -494,8 +495,8 @@ const HrDashboard = () => {
                                             </div>
                                             <div className="text-right">
                                                 <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-indigo-50 text-indigo-700' :
-                                                        app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
-                                                            'bg-gray-100 text-gray-600'
+                                                    app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
+                                                        'bg-gray-100 text-gray-600'
                                                     }`}>
                                                     {app.status}
                                                 </span>

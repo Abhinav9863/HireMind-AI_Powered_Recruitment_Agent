@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_URL } from './config';
 import { LogOut, Send, Paperclip, FileText, User, Briefcase, ChevronRight, UploadCloud, CheckCircle, MapPin, DollarSign } from 'lucide-react';
 
 const StudentDashboard = () => {
@@ -53,7 +54,7 @@ const StudentDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const response = await axios.get('http://localhost:8000/ats/history', {
+            const response = await axios.get(`${API_URL}/ats/history`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAtsHistory(response.data);
@@ -66,7 +67,7 @@ const StudentDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const response = await axios.get('http://localhost:8000/applications/my', {
+            const response = await axios.get(`${API_URL}/applications/my`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMyApplications(response.data);
@@ -123,7 +124,7 @@ const StudentDashboard = () => {
 
             const token = localStorage.getItem('token');
             try {
-                const response = await axios.post('http://localhost:8000/interview/start', formData, {
+                const response = await axios.post(`${API_URL}/interview/start`, formData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
@@ -181,7 +182,7 @@ const StudentDashboard = () => {
             try {
                 // Use a direct call or with auth header if needed (ATS check is technically free/public in plan but let's assume auth for now)
                 const token = localStorage.getItem('token');
-                const response = await axios.post('http://localhost:8000/ats/analyze', formData, {
+                const response = await axios.post(`${API_URL}/ats/analyze`, formData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
@@ -218,7 +219,7 @@ const StudentDashboard = () => {
 
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.post('http://localhost:8000/interview/chat', {
+            const response = await axios.post(`${API_URL}/interview/chat`, {
                 application_id: applicationId,
                 message: input
             }, {
@@ -362,7 +363,7 @@ const StudentDashboard = () => {
                                             {job.policy_path && (
                                                 <div className="mb-4 text-xs">
                                                     <a
-                                                        href={`http://localhost:8000/${job.policy_path}`}
+                                                        href={`${API_URL}/${job.policy_path}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="flex items-center gap-1 text-indigo-600 hover:underline"

@@ -15,11 +15,6 @@ router = APIRouter(
     tags=["applications"]
 )
 
-router = APIRouter(
-    prefix="/applications",
-    tags=["applications"]
-)
-
 class ApplicationRead(BaseModel):
     id: int
     status: str
@@ -83,10 +78,11 @@ async def get_application_detail(
     if current_user.role != UserRole.HR:
          raise HTTPException(status_code=403, detail="Only HR can view application details")
     
-    # Join with User to get student details
+    # Join with Job to check ownership
     stmt = (
-        select(Application, User)
+        select(Application, User, Job)
         .join(User, Application.student_id == User.id)
+        .join(Job, Application.job_id == Job.id)
         .where(Application.id == app_id)
     )
     result = await session.execute(stmt)
@@ -95,10 +91,11 @@ async def get_application_detail(
     if not row:
         raise HTTPException(status_code=404, detail="Application not found")
         
-    application, student = row
+    application, student, job = row
     
-    # Check if HR owns the job for this application
-    # (Optional security enhancement - omitting for speed, assuming HR trusted or validated at list level)
+    # Security Check: Ensure HR owns this job
+    if job.hr_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access Denied: You do not own this job posting.")
     
     return ApplicationDetail(
         id=application.id,

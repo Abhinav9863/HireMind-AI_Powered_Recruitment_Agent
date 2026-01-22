@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgeSQL: The primary relational database for application data (users, chat history metadata)
+  # PostgeSQL: The primary relational database for application data
   db:
     image: postgres:15-alpine
     container_name: hiremind-db
@@ -14,9 +14,13 @@ services:
       - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U hiremind -d hiremind_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Qdrant: Vector Database for RAG (Retrieval Augmented Generation)
-  # Stores embeddings of company policy/documents.
+  # Qdrant: Vector Database for RAG
   qdrant:
     image: qdrant/qdrant:latest
     container_name: hiremind-qdrant
@@ -26,6 +30,37 @@ services:
       - "6334:6334" # GRPC API
     volumes:
       - qdrant_data:/qdrant/storage
+
+  # Backend: FastAPI Application
+  backend:
+    build:
+      context: ./backend
+    container_name: hiremind-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hiremind:password@db:5432/hiremind_db
+      - QDRANT_URL=http://qdrant:6333
+      # Add other env vars here or use env_file
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads # Persist uploads locally
+
+  # Frontend: React Application
+  frontend:
+    build:
+      context: ./frontend
+    container_name: hiremind-frontend
+    restart: always
+    ports:
+      - "5173:80" # Map host 5173 to container 80 (nginx)
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

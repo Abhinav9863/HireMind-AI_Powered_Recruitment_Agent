@@ -32,7 +32,11 @@ async def create_job(
     
     policy_path = None
     if policy_file:
-        file_location = f"uploads/{policy_file.filename}"
+        # Sanitize filename
+        safe_filename = "".join([c for c in policy_file.filename if c.isalnum() or c in "._-"]).strip()
+        if not safe_filename:
+             safe_filename = "policy_doc.pdf"
+        file_location = f"uploads/{safe_filename}"
         with open(file_location, "wb+") as file_object:
             shutil.copyfileobj(policy_file.file, file_object)
         policy_path = file_location

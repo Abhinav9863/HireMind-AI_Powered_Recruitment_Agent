@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Briefcase, GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { API_URL } from './config';
 
 const AuthPage = () => {
     const [isSignUp, setIsSignUp] = useState(false);
@@ -20,7 +21,7 @@ const AuthPage = () => {
         university: ''    // For Student
     });
 
-    const API_URL = 'http://localhost:8000';
+
 
     // Handle URL-based mode switching
     useEffect(() => {

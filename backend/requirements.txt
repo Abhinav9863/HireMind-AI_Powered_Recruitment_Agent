@@ -13,3 +13,4 @@ langchain-community
 python-dotenv
 email-validator
 bcrypt==3.2.2
+pypdf

@@ -17,6 +17,19 @@ class UserRead(BaseModel):
     email: EmailStr
     full_name: str
     role: UserRole
+    company_name: Optional[str] = None
+    university: Optional[str] = None
+    profile_picture: Optional[str] = None
+    resume_path: Optional[str] = None
+    bio: Optional[str] = None
+    phone_number: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    university: Optional[str] = None
+    company_name: Optional[str] = None
+    bio: Optional[str] = None
+    phone_number: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str

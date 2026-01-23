@@ -29,6 +29,26 @@ const HrDashboard = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
+    // Summary State
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [summaryData, setSummaryData] = useState(null);
+
+    const handleSummarizeInterview = async (appId) => {
+        setSummaryLoading(true);
+        const token = localStorage.getItem('token');
+        try {
+            const response = await axios.post(`${API_URL}/interview/summarize/${appId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSummaryData(response.data);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to generate summary");
+        } finally {
+            setSummaryLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (activeTab === 'my-jobs') {
             fetchMyJobs();
@@ -62,6 +82,7 @@ const HrDashboard = () => {
     const fetchApplicationDetail = async (appId) => {
         setDetailLoading(true);
         setSelectedAppId(appId);
+        setSummaryData(null);
         const token = localStorage.getItem('token');
         try {
             const response = await axios.get(`${API_URL}/applications/${appId}`, {
@@ -80,6 +101,7 @@ const HrDashboard = () => {
         fetchApplications(job.id);
         setSelectedAppId(null);
         setSelectedAppDetail(null);
+        setSummaryData(null);
     };
 
     const handleBackToJobs = () => {
@@ -164,7 +186,7 @@ const HrDashboard = () => {
     const renderApplicationDetail = () => {
         if (!selectedAppDetail) return null;
 
-        const { student_name, student_email, ats_score, status, candidate_info, chat_history, ats_report } = selectedAppDetail;
+        const { student_name, student_email, ats_score, status, candidate_info, chat_history, ats_report, resume_path } = selectedAppDetail;
 
         return (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 h-full flex flex-col overflow-hidden animate-fade-in-right">
@@ -183,6 +205,16 @@ const HrDashboard = () => {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        {resume_path && (
+                            <a
+                                href={`${API_URL}/${resume_path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition flex items-center gap-2"
+                            >
+                                <Download size={16} /> Resume
+                            </a>
+                        )}
                         <button
                             onClick={() => handleUpdateStatus(selectedAppDetail.id, 'Interviewing')}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition"
@@ -235,10 +267,79 @@ const HrDashboard = () => {
 
                     {/* 2. Interview Chat Transcript */}
                     <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <MessageSquare size={20} className="text-indigo-600" />
-                            AI Interview Transcript
-                        </h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <MessageSquare size={20} className="text-indigo-600" />
+                                AI Interview Transcript
+                            </h3>
+                            <button
+                                onClick={() => handleSummarizeInterview(selectedAppDetail.id)}
+                                disabled={summaryLoading || !chat_history || chat_history.length === 0}
+                                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {summaryLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                        Analyzing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FileText size={14} /> Summarize Interview
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Summary Card */}
+                        {summaryData && (
+                            <div className="mb-6 bg-white rounded-xl shadow-lg border border-purple-100 overflow-hidden animate-fade-in-up">
+                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 border-b border-purple-100 flex justify-between items-center">
+                                    <h4 className="font-bold text-indigo-900 flex items-center gap-2">
+                                        ✨ AI Interview Analysis
+                                    </h4>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${summaryData.hiring_recommendation.includes('Strong Hire') ? 'bg-green-100 text-green-700 border-green-200' :
+                                        summaryData.hiring_recommendation.includes('Reject') ? 'bg-red-100 text-red-700 border-red-200' :
+                                            'bg-blue-100 text-blue-700 border-blue-200'
+                                        }`}>
+                                        Verdict: {summaryData.hiring_recommendation}
+                                    </span>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    <p className="text-sm text-gray-600 italic border-l-4 border-purple-300 pl-3">
+                                        "{summaryData.summary_text}"
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <h5 className="text-xs font-bold text-green-700 uppercase mb-2">Strengths</h5>
+                                            <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                                                {summaryData.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h5 className="text-xs font-bold text-red-700 uppercase mb-2">Weaknesses</h5>
+                                            <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                                                {summaryData.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                                            <span>Project Understanding Score</span>
+                                            <span>{summaryData.project_understanding_score}/100</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div
+                                                className="bg-purple-600 h-2 rounded-full transition-all duration-1000"
+                                                style={{ width: `${summaryData.project_understanding_score}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 max-h-[400px] overflow-y-auto space-y-4">
                             {chat_history && chat_history.length > 0 ? (
                                 chat_history.map((msg, idx) => (

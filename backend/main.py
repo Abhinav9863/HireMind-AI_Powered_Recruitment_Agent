@@ -8,7 +8,7 @@ from database import init_db, get_session
 from models import User, UserRole
 from schemas import UserCreate, Token
 from auth import get_password_hash, create_access_token, verify_password
-from routers import interview, jobs, ats, applications
+from routers import interview, jobs, ats, applications, users
 import secrets
 from pydantic import BaseModel, EmailStr
 
@@ -23,6 +23,7 @@ app.include_router(interview.router)
 app.include_router(jobs.router)
 app.include_router(ats.router)
 app.include_router(applications.router)
+app.include_router(users.router)
 
 # CORS (Allow Frontend to connect)
 app.add_middleware(

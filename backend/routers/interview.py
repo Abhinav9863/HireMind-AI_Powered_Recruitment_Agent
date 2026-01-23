@@ -109,7 +109,8 @@ def generate_technical_questions(resume_text: str, job_title: str) -> List[str]:
 @router.post("/start", response_model=ChatResponse)
 async def start_interview(
     job_id: int = Form(...),
-    resume: UploadFile = File(...),
+    resume: Optional[UploadFile] = File(None),
+    use_profile_resume: bool = Form(False),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -117,41 +118,49 @@ async def start_interview(
         raise HTTPException(status_code=403, detail="Only students can apply")
 
     # 1. Read PDF
-    content = await resume.read()
-    resume_text = extract_text_from_pdf(content)
+    resume_text = ""
+    file_location = ""
     
+    if resume:
+        # Case A: Uploading new resume
+        content = await resume.read()
+        resume_text = extract_text_from_pdf(content)
+        
+        # Save file
+        # Sanitize filename
+        safe_filename = "".join([c for c in resume.filename if c.isalnum() or c in "._-"]).strip()
+        file_location = f"uploads/{current_user.id}_{job_id}_{safe_filename}"
+        with open(file_location, "wb") as f:
+            f.write(content)
+            
+    elif use_profile_resume and current_user.resume_path:
+        # Case B: Using Profile Resume
+        print(f"DEBUG: Checking profile resume path: {current_user.resume_path}")
+        if not os.path.exists(current_user.resume_path):
+             print(f"DEBUG: File not found at {current_user.resume_path} (CWD: {os.getcwd()})")
+             raise HTTPException(status_code=404, detail=f"Profile resume file not found on server at {current_user.resume_path}")
+             
+        # Read from existing file
+        with open(current_user.resume_path, "rb") as f:
+            content = f.read()
+        resume_text = extract_text_from_pdf(content)
+        file_location = current_user.resume_path
+        
+    else:
+        raise HTTPException(status_code=400, detail="Please upload a resume or use your profile resume.")
+
     # 2. Get Job Details (for context)
     result = await session.execute(select(Job).where(Job.id == job_id))
     job = result.scalars().first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    # 3. Check for existing application
-    stmt = select(Application).where(
-        Application.student_id == current_user.id,
-        Application.job_id == job_id
-    )
-    result = await session.execute(stmt)
-    existing_app = result.scalars().first()
+    # 3. Analyze Resume (ATS) & Generate Questions
+    # We can reuse the ATS logic here or just do question generation
+    # For now, let's do both to populate the application correctly
     
-    if existing_app:
-        # Reset if exists for demo purposes, or return existing state
-        await session.delete(existing_app)
-        await session.commit()
-
-    # 4. Generate Questions
+    ats_result = analyze_resume_with_llm(resume_text, job.description)
     questions = generate_technical_questions(resume_text, job.title)
-    
-    # 5. Run ATS Analysis (Real)
-    print(f"Running ATS Analysis for {current_user.email} on job {job.title}...")
-    ats_result = analyze_resume_with_llm(resume_text, job.title, job.description)
-    print(f"ATS Score: {ats_result.get('score')}")
-
-    # 6. Create Application Record
-    # Save file temporarily (optional, using resume_path as placeholder)
-    file_location = f"uploads/{current_user.id}_{job_id}_{resume.filename}"
-    with open(file_location, "wb") as f:
-        f.write(content)
 
     new_app = Application(
         job_id=job_id,
@@ -281,14 +290,62 @@ async def chat_interview(
         # Save Answer 3
         current_history.append({"role": "assistant_q3", "question": app.generated_questions[2], "answer": user_msg})
         
-        reply = "Thank you for completing the interview! We will review your answers and get back to you shortly."
-        # Interview Completed
-        app.status = "Interviewed"
+        reply = "Thank you for answering the technical questions. Do you have any questions related to the company or our policies? (Type 'no' or 'done' to finish)"
+        next_step = "company_qna"
         
-        # Real ATS score is already saved at start_interview. 
-        # We can optionally re-evaluate here if we wanted to score the *interview* answers, 
-        # but for now, we keep the resume score.
-        
+    elif app.interview_step == "company_qna":
+        # Check if user wants to finish
+        if user_msg.lower().strip() in ["no", "no questions", "done", "finish", "none", "na"]:
+             reply = "Thank you for completing the interview! We will review your answers and get back to you shortly."
+             app.status = "Interviewed"
+             next_step = "completed"
+        else:
+             # Answer question using Policy RAG
+             try:
+                 # Fetch Job to get policy path
+                 job_result = await session.execute(select(Job).where(Job.id == app.job_id))
+                 job = job_result.scalars().first()
+                 
+                 policy_path = job.policy_path if job and job.policy_path else "uploads/SayOne_Technologies_Company_Details_and_Policies.pdf"
+                 
+                 if policy_path and os.path.exists(policy_path):
+                     with open(policy_path, "rb") as f:
+                         policy_content = f.read()
+                     policy_text = extract_text_from_pdf(policy_content)
+                 else:
+                     policy_text = "Policy document not available."
+
+                 # RAG Prompt
+                 prompt = f"""
+                 You are a helpful HR assistant for {job.company if job else "the company"}.
+                 Answer the candidate's question based ONLY on the provided company policy text below.
+                 If the answer is not in the text, say "I don't have that information handy, but I can have HR follow up with you."
+                 
+                 Company Policy:
+                 {policy_text[:10000]}
+                 
+                 Candidate Question: {user_msg}
+                 
+                 Answer concisely and professionally.
+                 """
+                 
+                 completion = client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": "You are a helpful HR assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.3,
+                 )
+                 answer = completion.choices[0].message.content
+                 reply = f"{answer}\n\nDo you have any other questions? (Type 'no' to finish)"
+                 next_step = "company_qna" # Loop
+                 
+             except Exception as e:
+                 print(f"RAG Error: {e}")
+                 reply = "I'm having trouble accessing the company policies right now. Do you have any other questions?"
+                 next_step = "company_qna"
+
     elif app.interview_step == "completed":
         reply = "The interview is already completed."
         next_step = "completed"
@@ -307,3 +364,107 @@ async def chat_interview(
         is_completed=(next_step == "completed"),
         application_id=app.id
     )
+
+class InterviewSummaryResponse(BaseModel):
+    strengths: List[str]
+    weaknesses: List[str]
+    project_understanding_score: int # 0-100
+    hiring_recommendation: str # "Strong Hire", "Hire", "Leaning No", "Reject"
+    summary_text: str
+
+@router.post("/summarize/{application_id}", response_model=InterviewSummaryResponse)
+async def summarize_interview(
+    application_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if current_user.role != UserRole.HR:
+        raise HTTPException(status_code=403, detail="Only HR can view summaries")
+
+    # Fetch Application
+    result = await session.execute(select(Application).where(Application.id == application_id))
+    app = result.scalars().first()
+    
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    if not app.chat_history:
+        return InterviewSummaryResponse(
+            strengths=[],
+            weaknesses=[],
+            project_understanding_score=0,
+            hiring_recommendation="N/A",
+            summary_text="No interview transcript available to analyze."
+        )
+
+    # Format Transcript
+    transcript_text = ""
+    for msg in app.chat_history:
+        role = msg.get("role", "unknown")
+        content = msg.get("content") or msg.get("answer") or msg.get("reply") or ""
+        question = msg.get("question")
+        
+        if role == "user":
+            transcript_text += f"Candidate: {content}\n"
+        elif "assistant" in role:
+            if question:
+                 transcript_text += f"Interviewer: {question}\n"
+                 transcript_text += f"Candidate Answer: {content}\n" # Stored answer
+            else:
+                 transcript_text += f"Interviewer: {content}\n"
+    
+    # LLM Analysis
+    prompt = f"""
+    You are an expert Technical Recruiter and Engineering Manager.
+    Analyze the following interview transcript for a Software Engineering role.
+    
+    Transcript:
+    {transcript_text[:12000]}
+    
+    Task:
+    1. Evaluate the candidate's technical depth based on their answers.
+    2. Assess their understanding of their own projects (if asked).
+    3. Identify key strengths and weaknesses shown in the CONVERSATION (not just resume).
+    4. Provide a hiring recommendation details.
+    
+    Output strictly valid JSON:
+    {{
+        "strengths": ["List of observed strengths"],
+        "weaknesses": ["List of observed weaknesses or vague answers"],
+        "project_understanding_score": <int 0-100>,
+        "hiring_recommendation": "Strong Hire" | "Hire" | "Leaning No" | "Reject",
+        "summary_text": "A brief 2-3 sentence executive summary of the interview performance."
+    }}
+    """
+    
+    try:
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that outputs raw JSON data without markdown formatting."},
+                {"role": "user", "content": prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.3,
+        )
+        content = completion.choices[0].message.content
+        
+        # Cleanup
+        clean_content = content.replace("```json", "").replace("```", "").strip()
+        start = clean_content.find('{')
+        end = clean_content.rfind('}') + 1
+        if start != -1 and end != -1:
+            json_str = clean_content[start:end]
+            data = json.loads(json_str)
+            return InterviewSummaryResponse(**data)
+            
+        raise ValueError("Could not parse LLM JSON")
+        
+    except Exception as e:
+        print(f"Summary Generation Error: {e}")
+        return InterviewSummaryResponse(
+            strengths=[],
+            weaknesses=["Error generating summary"],
+            project_understanding_score=0,
+            hiring_recommendation="Error",
+            summary_text=f"Failed to generate summary: {str(e)}"
+        )

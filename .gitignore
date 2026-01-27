@@ -15,3 +15,6 @@ dist/
 
 # Application
 *.log
+backend/uploads/
+*.bak
+venv_new/

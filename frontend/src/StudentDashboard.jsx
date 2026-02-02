@@ -47,7 +47,7 @@ const StudentDashboard = () => {
 
     const fetchJobs = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/jobs/');
+            const response = await axios.get(`${API_URL}/jobs/`);
             setJobs(response.data);
         } catch (error) {
             console.error("Failed to fetch jobs", error);
@@ -374,12 +374,6 @@ const StudentDashboard = () => {
                             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-sm font-medium ${activeTab === 'ats' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <FileText size={18} /> ATS Scanner
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('applications')}
-                            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-sm font-medium ${activeTab === 'applications' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <CheckCircle size={18} /> My Applications
                         </button>
                         <button
                             onClick={() => setActiveTab('applications')}

@@ -175,6 +175,9 @@ async def send_interview_scheduled_email(to_email: str, full_name: str, date_str
         )
         print(f"✅ Interview email sent to {to_email}")
 
+    except Exception as e:
+        print(f"⚠️ Email sending failed: {e}")
+
 async def send_rejection_email(to_email: str, full_name: str):
     """
     Send Rejection Email
@@ -232,5 +235,3 @@ async def send_rejection_email(to_email: str, full_name: str):
     except Exception as e:
         print(f"⚠️ Email sending failed: {e}")
 
-    except Exception as e:
-        print(f"⚠️ Email sending failed: {e}")

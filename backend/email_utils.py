@@ -235,3 +235,99 @@ async def send_rejection_email(to_email: str, full_name: str):
     except Exception as e:
         print(f"⚠️ Email sending failed: {e}")
 
+
+
+async def send_password_reset_email(to_email: str, full_name: str, reset_link: str):
+    """
+    Send Password Reset Email with reset link
+    """
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username = os.getenv("SMTP_USERNAME")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    email_from = os.getenv("EMAIL_FROM", f"HireMind <{smtp_username}>")
+
+    if not smtp_username or smtp_username == "your-email@gmail.com":
+        print(f"\n{'=' * 70}")
+        print(f"📧 PASSWORD RESET EMAIL (Development Mode)")
+        print(f"{'=' * 70}")
+        print(f"To: {to_email}")
+        print(f"Subject: Reset Your Password - HireMind")
+        print(f"\nHi {full_name},\n")
+        print(f"Click the link below to reset your password:")
+        print(f"{reset_link}")
+        print(f"\nThis link expires in 1 hour.")
+        print(f"{'=' * 70}\n")
+        return
+
+    try:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Reset Your Password - HireMind"
+        message["From"] = email_from
+        message["To"] = to_email
+
+        html_body = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0;">🔐 Password Reset</h1>
+              </div>
+              
+              <div style="background: white; padding: 40px; border-radius: 0 0 10px 10px;">
+                <h2 style="color: #667eea;">Reset Your Password</h2>
+                <p>Hi <strong>{full_name}</strong>,</p>
+                <p>We received a request to reset your password. Click the button below to create a new password:</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="{reset_link}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Reset Password</a>
+                </div>
+                
+                <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+                <p style="background: #f0f0f0; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 12px;">{reset_link}</p>
+                
+                <p style="color: #666; font-size: 14px; margin-top: 20px;">This link will expire in <strong>1 hour</strong>.</p>
+                
+                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                
+                <p style="color: #999; font-size: 12px;">
+                  If you didn't request this password reset, please ignore this email or contact support if you have concerns.
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+        """
+        
+        text_body = f"""
+        Hi {full_name},
+        
+        We received a request to reset your password for your HireMind account.
+        
+        Click the link below to reset your password:
+        {reset_link}
+        
+        This link will expire in 1 hour.
+        
+        If you didn't request this password reset, please ignore this email.
+        
+        Best regards,
+        The HireMind Team
+        """
+        
+        message.attach(MIMEText(text_body, "plain"))
+        message.attach(MIMEText(html_body, "html"))
+
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_server,
+            port=smtp_port,
+            username=smtp_username,
+            password=smtp_password,
+            start_tls=True
+        )
+        print(f"✅ Password reset email sent to {to_email}")
+
+    except Exception as e:
+        print(f"⚠️ Email sending failed: {e}")
+        print(f"Password reset link for {to_email}: {reset_link}")

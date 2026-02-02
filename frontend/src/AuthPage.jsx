@@ -234,7 +234,13 @@ const AuthPage = () => {
                         <input name="email" type="email" placeholder="Email" className="input-field" required onChange={handleInputChange} value={formData.email} />
                         <input name="password" type="password" placeholder="Password" className="input-field" required onChange={handleInputChange} value={formData.password} />
 
-                        <a href="#" className="text-xs text-gray-500 my-2 hover:underline">Forgot your password?</a>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/forgot-password')}
+                            className="text-xs text-gray-500 my-2 hover:underline cursor-pointer"
+                        >
+                            Forgot your password?
+                        </button>
 
                         {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
 

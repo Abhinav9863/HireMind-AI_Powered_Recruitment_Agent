@@ -29,6 +29,10 @@ class User(SQLModel, table=True):
     email_otp: Optional[str] = None  # Stores the current email OTP code
     email_otp_expires: Optional[datetime] = None  # Email OTP expiration time
     
+    # Password Reset fields
+    reset_password_token: Optional[str] = None  # Token for password reset
+    reset_password_expires: Optional[datetime] = None  # Token expiration time
+    
 
 
 class Job(SQLModel, table=True):
@@ -40,6 +44,7 @@ class Job(SQLModel, table=True):
     salary_range: str
     job_type: str = "Full-time"
     policy_path: Optional[str] = None
+    experience_required: int = Field(default=0)  # Minimum years of experience (0 = freshers welcome)
     hr_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

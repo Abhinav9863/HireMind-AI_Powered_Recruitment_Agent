@@ -23,6 +23,7 @@ async def create_job(
     location: str = Form(...),
     salary_range: str = Form(...),
     job_type: str = Form(...),
+    experience_required: int = Form(0),  # ✅ FIX: Accept experience requirement from frontend
     policy_file: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user), 
     session: AsyncSession = Depends(get_session)
@@ -48,6 +49,7 @@ async def create_job(
         location=location,
         salary_range=salary_range,
         job_type=job_type,
+        experience_required=experience_required,  # ✅ FIX: Include experience in Job creation
         policy_path=policy_path,
         hr_id=current_user.id
     )

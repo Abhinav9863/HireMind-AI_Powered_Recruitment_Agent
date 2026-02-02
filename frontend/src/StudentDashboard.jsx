@@ -24,6 +24,7 @@ const StudentDashboard = () => {
 
     // Applications State
     const [myApplications, setMyApplications] = useState([]);
+    const [currentAtsScore, setCurrentAtsScore] = useState(null);
 
     // Profile State
     const [profile, setProfile] = useState(null);
@@ -190,6 +191,11 @@ const StudentDashboard = () => {
                 setApplicationId(response.data.application_id);
                 setHasResume(true);
 
+                // Get ATS score directly from the response
+                if (response.data.ats_score !== undefined && response.data.ats_score !== null) {
+                    setCurrentAtsScore(response.data.ats_score);
+                }
+
                 // AI Response (First Question)
                 setTimeout(() => {
                     setMessages(prev => [...prev, {
@@ -204,10 +210,19 @@ const StudentDashboard = () => {
 
             } catch (error) {
                 console.error("Interview Start Error:", error);
+
+                // Extract specific error message from backend if available
+                let errorMessage = "Sorry, I encountered an error processing your resume. Please try again.";
+
+                if (error.response && error.response.data && error.response.data.detail) {
+                    // Use the specific error message from the backend
+                    errorMessage = error.response.data.detail;
+                }
+
                 setMessages(prev => [...prev, {
                     id: Date.now() + 1,
                     sender: 'ai',
-                    text: "Sorry, I encountered an error processing your resume. Please try again."
+                    text: errorMessage
                 }]);
             }
         }
@@ -401,16 +416,18 @@ const StudentDashboard = () => {
                     </div>
 
                     {/* Resume Stats - Only Visible when Active in Chat & Has Resume */}
-                    {activeTab === 'chat' && hasResume && (
+                    {activeTab === 'chat' && hasResume && currentAtsScore !== null && (
                         <div className="mb-8 animate-fade-in">
                             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Application Stats</h3>
                             <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-indigo-900 font-medium text-sm">ATS Match</span>
-                                    <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full">88%</span>
+                                    <span className={`text-white text-xs px-2 py-0.5 rounded-full ${currentAtsScore >= 70 ? 'bg-green-600' : currentAtsScore >= 40 ? 'bg-yellow-600' : 'bg-red-600'}`}>
+                                        {currentAtsScore}%
+                                    </span>
                                 </div>
                                 <div className="w-full bg-indigo-200 rounded-full h-1.5">
-                                    <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: '88%' }}></div>
+                                    <div className={`h-1.5 rounded-full ${currentAtsScore >= 70 ? 'bg-green-600' : currentAtsScore >= 40 ? 'bg-yellow-600' : 'bg-red-600'}`} style={{ width: `${currentAtsScore}%` }}></div>
                                 </div>
                             </div>
                         </div>
@@ -464,9 +481,16 @@ const StudentDashboard = () => {
                                                 <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center font-bold text-lg text-indigo-600">
                                                     {job.company.substring(0, 2).toUpperCase()}
                                                 </div>
-                                                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">
-                                                    {job.job_type}
-                                                </span>
+                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                    <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
+                                                        {job.job_type}
+                                                    </span>
+                                                    {job.experience_required !== undefined && (
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${job.experience_required === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                            {job.experience_required === 0 ? '🎓 Freshers Welcome' : `💼 ${job.experience_required}+ Years Required`}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <h3 className="text-lg font-bold text-gray-800 mb-1">{job.title}</h3>
                                             <p className="text-sm text-gray-500 mb-4">{job.company}</p>

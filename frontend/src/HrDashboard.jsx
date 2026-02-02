@@ -24,7 +24,8 @@ const HrDashboard = () => {
         description: '',
         location: '',
         salary_range: '',
-        job_type: 'Full-time'
+        job_type: 'Full-time',
+        experience_required: 0  // Default: freshers welcome
     });
     const [policyFile, setPolicyFile] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -138,6 +139,7 @@ const HrDashboard = () => {
         data.append('location', formData.location);
         data.append('salary_range', formData.salary_range);
         data.append('job_type', formData.job_type);
+        data.append('experience_required', formData.experience_required);  // Add experience field
         if (policyFile) {
             data.append('policy_file', policyFile);
         }
@@ -147,7 +149,7 @@ const HrDashboard = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMessage('Job Posted Successfully!');
-            setFormData({ title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time' });
+            setFormData({ title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', experience_required: 0 });
             setPolicyFile(null);
             setTimeout(() => {
                 setActiveTab('my-jobs');
@@ -500,21 +502,42 @@ const HrDashboard = () => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Salary Range</label>
-                                            <div className="relative">
-                                                <DollarSign className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                                                <input
-                                                    type="text"
-                                                    name="salary_range"
-                                                    value={formData.salary_range}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                    className="w-full pl-10 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
-                                                    placeholder="e.g. $100k - $120k"
-                                                />
-                                            </div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Minimum Experience Required
+                                                <span className="text-xs text-gray-500 ml-2">(Years)</span>
+                                            </label>
+                                            <select
+                                                name="experience_required"
+                                                value={formData.experience_required}
+                                                onChange={handleInputChange}
+                                                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
+                                            >
+                                                <option value="0">0 - Freshers Welcome</option>
+                                                <option value="1">1+ Year</option>
+                                                <option value="2">2+ Years</option>
+                                                <option value="3">3+ Years</option>
+                                                <option value="4">4+ Years</option>
+                                                <option value="5">5+ Years</option>
+                                            </select>
                                         </div>
                                     </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Salary Range</label>
+                                        <div className="relative">
+                                            <DollarSign className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                                            <input
+                                                type="text"
+                                                name="salary_range"
+                                                value={formData.salary_range}
+                                                onChange={handleInputChange}
+                                                required
+                                                className="w-full pl-10 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
+                                                placeholder="e.g. $100k - $120k"
+                                            />
+                                        </div>
+                                    </div>
+
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Company Policy (PDF) - Optional</label>
@@ -634,20 +657,22 @@ const HrDashboard = () => {
                     </div>
 
                     {/* Right Pane (Detailed View) */}
-                    {selectedAppId && (
-                        <div className="absolute inset-y-0 right-0 w-full lg:w-1/2 bg-white shadow-2xl transform transition-transform duration-300 z-30 lg:relative lg:transform-none lg:shadow-none detail-view">
-                            {detailLoading ? (
-                                <div className="h-full flex items-center justify-center text-gray-400">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                                </div>
-                            ) : (
-                                renderApplicationDetail()
-                            )}
-                        </div>
-                    )}
-                </div>
-            </main>
-        </div>
+                    {
+                        selectedAppId && (
+                            <div className="absolute inset-y-0 right-0 w-full lg:w-1/2 bg-white shadow-2xl transform transition-transform duration-300 z-30 lg:relative lg:transform-none lg:shadow-none detail-view">
+                                {detailLoading ? (
+                                    <div className="h-full flex items-center justify-center text-gray-400">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                    </div>
+                                ) : (
+                                    renderApplicationDetail()
+                                )}
+                            </div>
+                        )
+                    }
+                </div >
+            </main >
+        </div >
     );
 };
 

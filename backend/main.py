@@ -8,7 +8,7 @@ from database import init_db, get_session
 from models import User, UserRole
 from schemas import UserCreate, Token
 from auth import get_password_hash, create_access_token, verify_password
-from routers import interview, jobs, ats, applications, users, verification, schedule
+from routers import interview, jobs, ats, applications, users, verification, schedule, password_reset
 import secrets
 from datetime import datetime, timedelta
 from pydantic import BaseModel, EmailStr
@@ -27,6 +27,7 @@ app.include_router(applications.router)
 app.include_router(users.router)
 app.include_router(verification.router)
 app.include_router(schedule.router)
+app.include_router(password_reset.router)
 
 # CORS (Allow Frontend to connect)
 # Get allowed origins from environment variable, default to localhost for development

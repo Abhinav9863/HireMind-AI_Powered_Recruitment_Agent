@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthPage from './AuthPage';
 import StudentDashboard from './StudentDashboard';
 import HrDashboard from './HrDashboard';
+import ForgotPassword from './ForgotPassword';
+import ResetPassword from './ResetPassword';
 
 const PrivateRoute = ({ children, allowedRole }) => {
     const token = localStorage.getItem('token');
@@ -21,6 +23,8 @@ function App() {
                 {/* Public Auth Routes */}
                 <Route path="/" element={<AuthPage />} />
                 <Route path="/hr" element={<AuthPage />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
                 {/* Protected Dashboard Routes */}
                 <Route

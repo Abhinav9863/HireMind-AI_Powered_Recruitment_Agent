@@ -32,6 +32,7 @@ class ChatResponse(BaseModel):
     reply: str
     is_completed: bool = False
     application_id: Optional[int] = None
+    ats_score: Optional[int] = None  # Add ATS score to response
 
 from utils import extract_text_from_pdf
 
@@ -149,17 +150,68 @@ async def start_interview(
     else:
         raise HTTPException(status_code=400, detail="Please upload a resume or use your profile resume.")
 
+    # Validate resume text was extracted
+    if not resume_text or len(resume_text) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract text from PDF. Please ensure the PDF is readable and not scanned/image-based."
+        )
+    
+    # 📝 Log resume details for debugging
+    print(f"\n{'='*60}")
+    print(f"📄 Resume Upload - Job #{job_id}")
+    print(f"📏 Text Length: {len(resume_text)} characters")
+    print(f"📝 Preview: {resume_text[:200]}...")
+    print(f"{'='*60}\n")
+    
+    # ✅ Validate it's actually a resume (not a ticket/receipt/invoice)
+    from utils import validate_document_is_resume
+    is_valid, validation_error = validate_document_is_resume(resume_text)
+    
+    if not is_valid:
+        print(f"❌ Document Validation Failed: {validation_error}")
+        raise HTTPException(
+            status_code=400,
+            detail=validation_error
+        )
+    
+    print(f"✅ Document validated as resume")
+
     # 2. Get Job Details (for context)
     result = await session.execute(select(Job).where(Job.id == job_id))
     job = result.scalars().first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # 🎓 EXPERIENCE REQUIREMENT CHECK
+    if job.experience_required > 0:
+        from utils import extract_years_of_experience
+        candidate_experience = extract_years_of_experience(resume_text)
+        
+        print(f"📊 Experience Check - Required: {job.experience_required} years, Candidate: {candidate_experience} years")
+        
+        if candidate_experience < job.experience_required:
+            rejection_message = (
+                f"❌ Sorry, this position requires {job.experience_required} year(s) of experience. "
+                f"Your resume shows {candidate_experience} year(s) of experience. "
+                f"Please apply to positions matching your experience level."
+            )
+            print(f"❌ Application rejected: Insufficient experience")
+            raise HTTPException(status_code=400, detail=rejection_message)
+        
+        print(f"✅ Experience requirement met!")
 
     # 3. Analyze Resume (ATS) & Generate Questions
-    # We can reuse the ATS logic here or just do question generation
-    # For now, let's do both to populate the application correctly
+    print(f"🔍 Starting ATS analysis for: {job.title}")
+    print(f"🏢 Company: {job.company}")
     
-    ats_result = analyze_resume_with_llm(resume_text, job.description)
+    # Pass both job title and description for accurate ATS analysis
+    ats_result = analyze_resume_with_llm(resume_text, job.title, job.description)
+    
+    ats_score = ats_result.get("score", 0)
+    print(f"📊 ATS Score: {ats_score}%")
+    print(f"💡 Feedback: {ats_result.get('feedback', 'N/A')[:150]}...")
+    
     questions = generate_technical_questions(resume_text, job.title)
 
     new_app = Application(
@@ -183,7 +235,8 @@ async def start_interview(
 
     return ChatResponse(
         reply="Hello! I've received your resume. To start the interview, may I please have your full name?",
-        application_id=new_app.id
+        application_id=new_app.id,
+        ats_score=new_app.ats_score  # Include ATS score in response
     )
 
 @router.post("/chat", response_model=ChatResponse)

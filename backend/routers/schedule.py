@@ -19,10 +19,13 @@ class SlotCreate(BaseModel):
     start_time: datetime
     end_time: datetime
 
+
 class SlotRead(BaseModel):
     id: int
     hr_id: int
     candidate_id: int | None
+    candidate_name: str | None = None
+    candidate_email: str | None = None
     start_time: datetime
     end_time: datetime
     meet_link: str
@@ -38,7 +41,6 @@ async def create_slot(
         raise HTTPException(status_code=403, detail="Only HR can create interview slots")
 
     # Generate a simulated Google Meet link
-    # Format: meet.google.com/abc-defg-hij
     chars = "abcdefghijklmnopqrstuvwxyz"
     part1 = "".join(secrets.choice(chars) for _ in range(3))
     part2 = "".join(secrets.choice(chars) for _ in range(4))
@@ -63,16 +65,27 @@ async def get_slots(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # If HR, show THEIR slots
-    # If Student, technically no need to see all, but maybe for future self-selection
-    # For now, restrict to HR seeing their own
-    
     if current_user.role == UserRole.HR:
-        stmt = select(InterviewSlot).where(InterviewSlot.hr_id == current_user.id).order_by(InterviewSlot.start_time)
+        # Join with User to get candidate details
+        stmt = (
+            select(InterviewSlot, User)
+            .outerjoin(User, InterviewSlot.candidate_id == User.id)
+            .where(InterviewSlot.hr_id == current_user.id)
+            .order_by(InterviewSlot.start_time)
+        )
     else:
-        # Students shouldn't casually browse assignments yet, unless we change logic
-        # But allow empty return for safety
         return []
 
     result = await session.execute(stmt)
-    return result.scalars().all()
+    rows = result.all()
+    
+    final_slots = []
+    for slot, candidate in rows:
+        slot_dict = slot.dict()
+        if candidate:
+            slot_dict["candidate_name"] = candidate.full_name
+            slot_dict["candidate_email"] = candidate.email
+        final_slots.append(slot_dict)
+        
+    return final_slots
+

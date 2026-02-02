@@ -171,8 +171,24 @@ const HrSchedule = () => {
                                                     </div>
 
                                                     {isBooked ? (
-                                                        <div className="mt-2 text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded inline-block">
-                                                            Assigned to Candidate #{slot.candidate_id}
+                                                        <div className="mt-3 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                                            <div className="text-sm font-semibold text-gray-900 mb-1">
+                                                                {slot.candidate_name || `Candidate #${slot.candidate_id}`}
+                                                            </div>
+                                                            {slot.candidate_email && (
+                                                                <div className="text-xs text-gray-500 mb-2 truncate">
+                                                                    {slot.candidate_email}
+                                                                </div>
+                                                            )}
+                                                            <a
+                                                                href={slot.meet_link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-2 text-xs font-medium text-purple-700 hover:text-purple-900 hover:underline mt-2"
+                                                            >
+                                                                <Video size={14} />
+                                                                Join Interview
+                                                            </a>
                                                         </div>
                                                     ) : (
                                                         <div className="mt-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded inline-block">

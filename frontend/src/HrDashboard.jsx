@@ -176,10 +176,20 @@ const HrDashboard = () => {
                 if (selectedAppDetail && selectedAppDetail.id === appId) {
                     setSelectedAppDetail(prev => ({ ...prev, status: newStatus }));
                 }
+
+                // Show Success Message
+                if (newStatus === 'Interviewing') {
+                    alert("Success! Candidate accepted and Interview Email sent.");
+                } else if (newStatus === 'Rejected') {
+                    alert("Candidate rejected. Rejection email sent.");
+                } else {
+                    alert("Status updated successfully.");
+                }
             }
         } catch (error) {
             console.error("Failed to update status", error);
-            alert("Failed to update status");
+            const errorMsg = error.response?.data?.detail || "Failed to update status";
+            alert(errorMsg);
         }
     };
 

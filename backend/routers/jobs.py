@@ -43,7 +43,7 @@ async def create_job(
 
     new_job = Job(
         title=title,
-        company=current_user.company_name or "Unknown Company",
+        company=current_user.university_or_company or "Unknown Company",
         description=description,
         location=location,
         salary_range=salary_range,

@@ -26,9 +26,13 @@ app.include_router(applications.router)
 app.include_router(users.router)
 
 # CORS (Allow Frontend to connect)
+# Get allowed origins from environment variable, default to localhost for development
+import os as _os_cors
+ALLOWED_ORIGINS = _os_cors.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"], # Frontend URLs
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

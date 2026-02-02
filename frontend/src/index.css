@@ -16,7 +16,7 @@ body {
 */
 
 .container {
-    @apply relative overflow-hidden bg-white rounded-[30px] w-[850px] max-w-full min-h-[550px];
+    @apply relative overflow-hidden bg-white rounded-[30px] w-[850px] max-w-full min-h-[650px];
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 

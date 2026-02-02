@@ -19,12 +19,17 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Profile fields
-    company_name: Optional[str] = None # For HR
-    university: Optional[str] = None   # For Student
+    university_or_company: Optional[str] = None  # Unified field for university or previous company
     profile_picture: Optional[str] = None
     resume_path: Optional[str] = None
     bio: Optional[str] = None
     phone_number: Optional[str] = None
+    
+    # Email Verification fields (OTP-based)
+    email_otp: Optional[str] = None  # Stores the current email OTP code
+    email_otp_expires: Optional[datetime] = None  # Email OTP expiration time
+    
+
 
 class Job(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -65,3 +70,13 @@ class ATSAnalysis(SQLModel, table=True):
     score: int
     analysis_data: dict = Field(default={}, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class InterviewSlot(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    hr_id: int = Field(foreign_key="user.id")
+    candidate_id: Optional[int] = Field(default=None, foreign_key="user.id", nullable=True)
+    start_time: datetime
+    end_time: datetime
+    meet_link: str
+    status: str = Field(default="AVAILABLE") # AVAILABLE, BOOKED
+    is_collapsed: bool = Field(default=False)

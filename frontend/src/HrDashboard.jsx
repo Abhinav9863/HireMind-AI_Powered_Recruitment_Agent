@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from './config';
-import { PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, X, MessageSquare, FileText, CheckCircle, AlertCircle, ChevronRight, Download } from 'lucide-react';
+import { PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, X, MessageSquare, FileText, CheckCircle, AlertCircle, ChevronRight, Download, Calendar } from 'lucide-react';
+import HrSchedule from './HrSchedule';
 
 const HrDashboard = () => {
     const navigate = useNavigate();
@@ -399,6 +400,12 @@ const HrDashboard = () => {
                         >
                             <PlusCircle size={18} /> Post a Job
                         </button>
+                        <button
+                            onClick={() => { setActiveTab('schedule'); setSelectedJob(null); }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-sm font-medium ${activeTab === 'schedule' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Calendar size={18} /> Schedule
+                        </button>
                     </nav>
                 </div>
                 <div className="p-4 border-t border-gray-100">
@@ -412,7 +419,7 @@ const HrDashboard = () => {
             <main className="flex-1 flex flex-col relative h-full overflow-hidden">
                 <header className="px-8 py-5 flex justify-between items-center bg-white border-b border-gray-200 shadow-sm z-10">
                     <h2 className="text-xl font-bold text-gray-800">
-                        {activeTab === 'post-job' ? 'Create New Position' : (selectedJob ? selectedJob.title : 'Active Job Listings')}
+                        {activeTab === 'post-job' ? 'Create New Position' : activeTab === 'schedule' ? 'Interview Schedule' : (selectedJob ? selectedJob.title : 'Active Job Listings')}
                     </h2>
                     {selectedJob && (
                         <button onClick={handleBackToJobs} className="text-sm text-gray-500 hover:text-indigo-600 flex items-center gap-1 transition-colors">
@@ -425,6 +432,13 @@ const HrDashboard = () => {
 
                     {/* Left Pane (Job List OR Applicant List) */}
                     <div className={`flex-1 overflow-y-auto p-8 transition-all duration-300 ${selectedAppId ? 'w-1/2 hidden lg:block border-r border-gray-200' : 'w-full'}`}>
+
+                        {/* SCHEDULE TAB */}
+                        {activeTab === 'schedule' && (
+                            <div className="max-w-6xl mx-auto h-full">
+                                <HrSchedule />
+                            </div>
+                        )}
 
                         {/* POST JOB FORM */}
                         {activeTab === 'post-job' && (

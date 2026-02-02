@@ -7,18 +7,17 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+
     role: UserRole
-    # Optional fields
-    company_name: Optional[str] = None
-    university: Optional[str] = None
+    # Unified field for university or previous company
+    university_or_company: Optional[str] = None
 
 class UserRead(BaseModel):
     id: int
     email: EmailStr
     full_name: str
     role: UserRole
-    company_name: Optional[str] = None
-    university: Optional[str] = None
+    university_or_company: Optional[str] = None
     profile_picture: Optional[str] = None
     resume_path: Optional[str] = None
     bio: Optional[str] = None
@@ -26,8 +25,7 @@ class UserRead(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
-    university: Optional[str] = None
-    company_name: Optional[str] = None
+    university_or_company: Optional[str] = None
     bio: Optional[str] = None
     phone_number: Optional[str] = None
 

@@ -64,6 +64,69 @@ async def update_application_status(
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
         
+    
+    
+    # Check for Acceptance (Interviewing) and Schedule Logic
+    # Frontend sends "Interviewing" when clicking Accept
+    if status_update.status == "Interviewing" and app.status != "Interviewing":
+        from models import InterviewSlot
+        from email_utils import send_interview_scheduled_email
+        
+        # Verify job ownership
+        job_result = await session.execute(select(Job).where(Job.id == app.job_id))
+        job = job_result.scalars().first()
+        
+        if job.hr_id != current_user.id:
+             raise HTTPException(status_code=403, detail="You do not own this job application")
+
+        # Find first available slot
+        slot_stmt = (
+            select(InterviewSlot)
+            .where(InterviewSlot.hr_id == current_user.id)
+            .where(InterviewSlot.status == "AVAILABLE")
+            .order_by(InterviewSlot.start_time)
+        )
+        slot_result = await session.execute(slot_stmt)
+        slot = slot_result.scalars().first()
+        
+        if not slot:
+            raise HTTPException(
+                status_code=400, 
+                detail="No interview slots available. Please add slots in the Schedule tab first."
+            )
+            
+        # Book the slot
+        slot.status = "BOOKED"
+        slot.candidate_id = app.student_id
+        session.add(slot)
+        
+        # Get Student Info for Email
+        student_result = await session.execute(select(User).where(User.id == app.student_id))
+        student = student_result.scalars().first()
+        
+        # Send Email
+        date_str = slot.start_time.strftime("%B %d, %Y") 
+        time_str = slot.start_time.strftime("%I:%M %p")
+        
+        await send_interview_scheduled_email(
+            student.email, 
+            student.full_name, 
+            date_str, 
+            time_str, 
+            slot.meet_link
+        )
+
+    # Check for Rejection Logic
+    elif status_update.status == "Rejected" and app.status != "Rejected":
+        from email_utils import send_rejection_email
+        
+        # Get Student Info for Email
+        student_result = await session.execute(select(User).where(User.id == app.student_id))
+        student = student_result.scalars().first()
+        
+        await send_rejection_email(student.email, student.full_name)
+
+        
     app.status = status_update.status
     session.add(app)
     await session.commit()

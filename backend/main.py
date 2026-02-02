@@ -8,8 +8,9 @@ from database import init_db, get_session
 from models import User, UserRole
 from schemas import UserCreate, Token
 from auth import get_password_hash, create_access_token, verify_password
-from routers import interview, jobs, ats, applications, users
+from routers import interview, jobs, ats, applications, users, verification, schedule
 import secrets
+from datetime import datetime, timedelta
 from pydantic import BaseModel, EmailStr
 
 @asynccontextmanager
@@ -24,6 +25,8 @@ app.include_router(jobs.router)
 app.include_router(ats.router)
 app.include_router(applications.router)
 app.include_router(users.router)
+app.include_router(verification.router)
+app.include_router(schedule.router)
 
 # CORS (Allow Frontend to connect)
 # Get allowed origins from environment variable, default to localhost for development
@@ -54,6 +57,18 @@ def read_root():
 
 @app.post("/auth/signup", response_model=Token)
 async def signup(user: UserCreate, session: AsyncSession = Depends(get_session)):
+    """
+    User Signup with Dual OTP Verification
+    
+    Flow:
+    1. User submits signup form (email, phone, password, etc.)
+    2. Generate TWO OTP codes (email + SMS)
+    3. Send email OTP via console/email
+    4. Send SMS OTP via Twilio
+    5. User verifies using EITHER OTP
+    6. Account activated
+    """
+    
     # Check if user exists
     result = await session.execute(select(User).where(User.email == user.email))
     existing_user = result.scalars().first()
@@ -63,43 +78,54 @@ async def signup(user: UserCreate, session: AsyncSession = Depends(get_session))
             detail="Email already registered"
         )
     
-    # 1. HR Domain Restriction
+
+    
+    # HR Domain Restriction
     if user.role == UserRole.HR:
         public_domains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"]
         domain = user.email.split("@")[-1]
         if domain in public_domains:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="HR accounts must use a corporate email address (e.g., name@company.com). Public domains are not allowed."
+                detail="HR accounts must use a corporate email address. Public domains are not allowed."
             )
 
-    # Create new user
+    # Generate OTP codes
+    # Generate OTP codes
+    from datetime import timedelta
+    from email_utils import send_email_otp
+    
+    email_otp = str(secrets.randbelow(1000000)).zfill(6)  # 6-digit code
+    otp_expiry = datetime.utcnow() + timedelta(minutes=5)
+    otp_expiry = datetime.utcnow() + timedelta(minutes=5)
+    
+    # Create new user with OTPs
     hashed_password = get_password_hash(user.password)
-    verification_token = secrets.token_urlsafe(32)
     
     db_user = User(
         email=user.email,
         full_name=user.full_name,
         hashed_password=hashed_password,
         role=user.role,
-        company_name=user.company_name,
-        university=user.university,
-        is_verified=True, # Enforce verification -> Disabled for now
-        verification_token=verification_token
+        university_or_company=user.university_or_company,
+        is_verified=False,  # Require OTP verification
+        verification_token=secrets.token_urlsafe(32),  # Keep for backward compatibility
+        email_otp=email_otp,
+        email_otp_expires=otp_expiry
     )
     
     session.add(db_user)
     await session.commit()
     await session.refresh(db_user)
     
-    # Simulate Sending Email (Log it)
-    print(f"--- EMAIL SIMULATION ---")
-    print(f"To: {db_user.email}")
-    print(f"Subject: Verify your HireMind Account")
-    print(f"Link: http://localhost:8000/auth/verify?token={verification_token}")
-    print(f"------------------------")
+    # Send Email OTP (async)
+    await send_email_otp(db_user.email, db_user.full_name, email_otp)
 
-    return {"access_token": "", "token_type": "bearer"} # Don't login yet
+    return {
+        "access_token": "", 
+        "token_type": "bearer",
+        # Include user_id in response for frontend to use in verification
+    }
 
 
 class LoginRequest(BaseModel):
@@ -129,11 +155,11 @@ async def login(user_data: LoginRequest, session: AsyncSession = Depends(get_ses
         )
 
     # 3. Enforce Email Verification
-    # if not user.is_verified:
-    #      raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Email not verified. Please check your inbox for the verification link."
-    #     )
+    if not user.is_verified:
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account not verified. Please verify your account using OTP."
+        )
 
     access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -157,6 +183,108 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
     await session.commit()
     
     return {"message": "Email verified successfully! You can now login."}
+
+
+# ============================================================================
+# DUAL OTP VERIFICATION ENDPOINTS
+# ============================================================================
+
+class VerifyOTPRequest(BaseModel):
+    email_or_phone: str  # User can provide email OR phone
+    otp: str  # 6-digit code
+    verification_type: str  # "email" or "sms"
+
+class ResendOTPRequest(BaseModel):
+    email: str
+    method: str  # "email" or "sms" or "both"
+
+
+@app.post("/auth/verify-otp")
+async def verify_otp(request: VerifyOTPRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Verify OTP Code (Email OR SMS)
+    User can verify using EITHER email OTP or SMS OTP
+    """
+    
+    # Find user by email
+    result = await session.execute(
+        select(User).where(User.email == request.email_or_phone)
+    )
+    
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if already verified
+    if user.is_verified:
+        return {"success": True, "message": "Account already verified"}
+    
+    # Verify OTP
+    if not user.email_otp:
+        raise HTTPException(status_code=400, detail="No email OTP found. Please request a new code.")
+    
+    if user.email_otp_expires and datetime.utcnow() > user.email_otp_expires:
+        raise HTTPException(status_code=400, detail="Email OTP has expired. Please request a new code.")
+    
+    if user.email_otp != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid email OTP code")
+    
+    # Success! Mark user as verified
+    user.is_verified = True
+    user.email_otp = None  # Clear email OTP
+    user.email_otp_expires = None
+    
+    session.add(user)
+    await session.commit()
+    
+    print(f"✅ User {user.email} verified successfully via {request.verification_type.upper()} OTP!")
+    
+    return {
+        "success": True,
+        "message": f"Account verified successfully via {request.verification_type.upper()} OTP! You can now login."
+    }
+
+
+
+@app.post("/auth/resend-otp")
+async def resend_otp(request: ResendOTPRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Resend OTP Code(s) - Email, SMS, or Both
+    """
+    from email_utils import send_email_otp
+    
+    result = await session.execute(select(User).where(User.email == request.email))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_verified:
+        return {"success": True, "message": "Account already verified"}
+    
+    # Generate new OTP codes
+    from datetime import timedelta
+    otp_expiry = datetime.utcnow() + timedelta(minutes=5)
+    
+    
+    if request.method in ["email", "both"]:
+        # Generate and send email OTP
+        email_otp = str(secrets.randbelow(1000000)).zfill(6)
+        user.email_otp = email_otp
+        user.email_otp_expires = otp_expiry
+        
+        # Send Email OTP (async)
+        await send_email_otp(user.email, user.full_name, email_otp)
+    
+    session.add(user)
+    await session.commit()
+    
+    return {
+        "success": True,
+        "message": f"OTP code(s) resent successfully via email"
+    }
+
 
 # @app.post("/auth/google-mock", response_model=Token)
 # async def google_mock_login(request: MockLoginRequest, session: AsyncSession = Depends(get_session)):

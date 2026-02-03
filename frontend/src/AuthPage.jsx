@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Briefcase, GraduationCap, Loader2, X, Mail, RefreshCw } from 'lucide-react';
-import ReCAPTCHA from 'react-google-recaptcha';
+
 import axios from 'axios';
-import { API_URL, RECAPTCHA_SITE_KEY } from './config';
+import { API_URL } from './config';
 import { useNotification } from './context/NotificationContext';
 
 const AuthPage = () => {
@@ -14,7 +14,7 @@ const AuthPage = () => {
     const [showOTPModal, setShowOTPModal] = useState(false);
     const [otpMethod, setOtpMethod] = useState('email'); // 'email' only
     const [otp, setOtp] = useState('');
-    const [captchaToken, setCaptchaToken] = useState('');
+
     const navigate = useNavigate();
     const location = useLocation();
     const { addNotification } = useNotification();
@@ -41,9 +41,7 @@ const AuthPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleCaptchaChange = (token) => {
-        setCaptchaToken(token);
-    };
+
 
     const handleSignup = async (e) => {
         e.preventDefault();
@@ -212,14 +210,7 @@ const AuthPage = () => {
                         />
 
                         {/* reCAPTCHA */}
-                        {RECAPTCHA_SITE_KEY && (
-                            <div className="mb-3">
-                                <ReCAPTCHA
-                                    sitekey={RECAPTCHA_SITE_KEY}
-                                    onChange={handleCaptchaChange}
-                                />
-                            </div>
-                        )}
+
 
                         {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
 

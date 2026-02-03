@@ -19,7 +19,7 @@ async def send_email_otp(to_email: str, full_name: str, otp: str):
     """
     
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "465"))
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
     smtp_username = os.getenv("SMTP_USERNAME")
     smtp_password = os.getenv("SMTP_PASSWORD")
     email_from = os.getenv("EMAIL_FROM", f"HireMind <{smtp_username}>")
@@ -99,7 +99,7 @@ async def send_email_otp(to_email: str, full_name: str, otp: str):
         print(f"🔄 Connecting to SMTP Server {smtp_server}:{smtp_port}...")
         
         # Explicit SMTP connection for debugging
-        smtp = aiosmtplib.SMTP(hostname=smtp_server, port=smtp_port, use_tls=(smtp_port==465), start_tls=(smtp_port!=465), timeout=30)
+        smtp = aiosmtplib.SMTP(hostname=smtp_server, port=smtp_port, start_tls=True, timeout=30)
         await smtp.connect()
         print(f"✅ Connected. Logging in as {smtp_username}...")
         
@@ -126,7 +126,7 @@ async def send_interview_scheduled_email(to_email: str, full_name: str, date_str
     """
     
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "465"))
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
     smtp_username = os.getenv("SMTP_USERNAME")
     smtp_password = os.getenv("SMTP_PASSWORD")
     email_from = os.getenv("EMAIL_FROM", f"HireMind <{smtp_username}>")
@@ -176,8 +176,7 @@ async def send_interview_scheduled_email(to_email: str, full_name: str, date_str
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            use_tls=(smtp_port == 465),
-            start_tls=(smtp_port != 465),
+            start_tls=True,
             timeout=30
         )
         print(f"✅ Interview email sent to {to_email}")
@@ -235,8 +234,7 @@ async def send_rejection_email(to_email: str, full_name: str):
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            use_tls=(smtp_port == 465),
-            start_tls=(smtp_port != 465),
+            start_tls=True,
             timeout=30
         )
         print(f"✅ Rejection email sent to {to_email}")
@@ -308,8 +306,7 @@ async def send_interview_rescheduled_email(to_email: str, full_name: str, old_da
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            use_tls=(smtp_port == 465),
-            start_tls=(smtp_port != 465),
+            start_tls=True,
             timeout=30
         )
         print(f"✅ Interview rescheduled email sent to {to_email}")
@@ -376,8 +373,7 @@ async def send_interview_cancelled_email(to_email: str, full_name: str, date_str
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            use_tls=(smtp_port == 465),
-            start_tls=(smtp_port != 465),
+            start_tls=True,
             timeout=30
         )
         print(f"✅ Interview cancellation email sent to {to_email}")
@@ -474,8 +470,7 @@ async def send_password_reset_email(to_email: str, full_name: str, reset_link: s
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            use_tls=(smtp_port == 465),
-            start_tls=(smtp_port != 465),
+            start_tls=True,
             timeout=30
         )
         print(f"✅ Password reset email sent to {to_email}")

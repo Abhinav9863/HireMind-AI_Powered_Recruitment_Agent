@@ -33,7 +33,7 @@ const Profile = ({
                                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                             ) : profile.profile_picture ? (
                                 <img
-                                    src={profile.profile_picture.startsWith('http') ? profile.profile_picture : `${API_URL}/${profile.profile_picture}?t=${Date.now()}`}
+                                    src={profile.profile_picture.startsWith('http') ? profile.profile_picture : `${API_URL}/${profile.profile_picture}`}
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/150'; }}

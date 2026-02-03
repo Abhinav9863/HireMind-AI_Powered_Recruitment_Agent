@@ -166,6 +166,12 @@ async def signup(user: UserCreate, session: AsyncSession = Depends(get_session))
     from email_utils import send_email_otp
     
     email_otp = str(secrets.randbelow(1000000)).zfill(6)  # 6-digit code
+    
+    # ✅ TEST MODE BYPASS (For Demo/Dev)
+    # If email starts with 'test' or ends with 'example.com', use fixed OTP '000000'
+    if user.email.lower().startswith("test") or user.email.lower().endswith("@example.com"):
+        email_otp = "000000"
+        print(f"🔓 TEST MODE: Fixed OTP '000000' generated for {user.email}")
     otp_expiry = datetime.utcnow() + timedelta(minutes=5)
     otp_expiry = datetime.utcnow() + timedelta(minutes=5)
     

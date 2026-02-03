@@ -55,11 +55,19 @@ const HrHeader = ({
                 {/* Profile Widget */}
                 <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-600">
-                        {/* HR usually doesn't have a profile picture set up yet in this app version, using initials or icon */}
-                        <User size={20} />
+                        {user?.profile_picture ? (
+                            <img
+                                src={user.profile_picture.startsWith('http') ? user.profile_picture : `${API_URL}/${user.profile_picture}`}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/150' }}
+                            />
+                        ) : (
+                            <User size={20} />
+                        )}
                     </div>
                     <div className="text-sm">
-                        <p className="font-bold text-gray-900 leading-none mb-1">Recruiter</p>
+                        <p className="font-bold text-gray-900 leading-none mb-1">{user?.full_name || 'Recruiter'}</p>
                         <div className="flex items-center text-gray-400 text-xs">
                             HR Panel
                         </div>

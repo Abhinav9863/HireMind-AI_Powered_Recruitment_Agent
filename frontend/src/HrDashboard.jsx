@@ -41,6 +41,7 @@ const HrDashboard = () => {
     // Summary State
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryData, setSummaryData] = useState(null);
+    const [jobSummary, setJobSummary] = useState(null);
 
     // Search State
     const [searchQuery, setSearchQuery] = useState('');

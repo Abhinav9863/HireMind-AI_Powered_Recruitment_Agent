@@ -60,7 +60,20 @@ const PostJob = ({
                             <option>In-Office</option>
                         </select>
                     </div>
-                    {/* Duplicate Experience Field Removed Previously */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Experience (Years)</label>
+                        <select
+                            name="experience_required"
+                            value={formData.experience_required}
+                            onChange={handleInputChange}
+                            className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                        >
+                            {[...Array(11).keys()].map(num => (
+                                <option key={num} value={num}>{num === 0 ? 'Fresher (0 years)' : `${num} year${num > 1 ? 's' : ''}`}</option>
+                            ))}
+                            <option value="11">10+ years</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">

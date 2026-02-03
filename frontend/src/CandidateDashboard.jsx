@@ -148,6 +148,7 @@ const CandidateDashboard = () => {
         fetchAtsHistory();
         fetchMyApplications();
         fetchProfile();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleLogout = () => {

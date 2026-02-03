@@ -245,7 +245,7 @@ async def start_interview(
             resume_text=resume_text,
             generated_questions=questions,
             interview_step="name", # First step
-            status="Interviewing",
+            status="Applied",
             candidate_info={},
             chat_history=[],
             ats_score=ats_result.get("score", 0),
@@ -292,6 +292,10 @@ async def chat_interview(
     # Update History
     current_history = list(app.chat_history) if app.chat_history else []
     current_history.append({"role": "user", "content": user_msg})
+    
+    # Auto-update status to "Interviewing" if it's currently "Applied"
+    if app.status == "Applied":
+        app.status = "Interviewing"
     
     # State Machine
     reply = ""
@@ -382,7 +386,7 @@ async def chat_interview(
         # Check if user wants to finish
         if user_msg.lower().strip() in ["no", "no questions", "done", "finish", "none", "na"]:
              reply = "Thank you for completing the interview! We will review your answers and get back to you shortly."
-             app.status = "Interviewed"
+             app.status = "Review"
              next_step = "completed"
         else:
              # Answer question using Policy RAG

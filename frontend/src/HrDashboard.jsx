@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from './config';
+import { useNotification } from './context/NotificationContext';
 import { PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, X, MessageSquare, FileText, CheckCircle, AlertCircle, ChevronRight, Download, Calendar, Search } from 'lucide-react';
 import HrSchedule from './HrSchedule';
 import HrSidebar from './components/hr_dashboard/HrSidebar';
@@ -12,6 +13,7 @@ import HrProfile from './components/hr_dashboard/HrProfile';
 
 const HrDashboard = () => {
     const navigate = useNavigate();
+    const { addNotification } = useNotification();
     const [activeTab, setActiveTab] = useState('my-jobs'); // 'post-job' | 'my-jobs' | 'schedule' | 'profile'
     const [myJobs, setMyJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
@@ -56,7 +58,7 @@ const HrDashboard = () => {
             setSummaryData(response.data);
         } catch (error) {
             console.error(error);
-            alert("Failed to generate summary");
+            addNotification('error', "Failed to generate summary");
         } finally {
             setSummaryLoading(false);
         }
@@ -116,15 +118,9 @@ const HrDashboard = () => {
         }
     };
 
-    const [notification, setNotification] = useState(null); // { message, type: 'loading' | 'success' | 'error' }
-
-    // ... existing code ...
-
+    // Old manual notification system removed
     const showNotification = (message, type = 'info') => {
-        setNotification({ message, type });
-        if (type !== 'loading') {
-            setTimeout(() => setNotification(null), 3000);
-        }
+        addNotification(type === 'loading' ? 'info' : type, message);
     };
 
     const fetchApplicationDetail = async (appId) => {
@@ -229,15 +225,6 @@ const HrDashboard = () => {
             );
         }
 
-        // Show brief notification (non-blocking)
-        if (newStatus === 'Interviewing') {
-            showNotification("Sending interview details via email...", 'loading');
-        } else if (newStatus === 'Rejected') {
-            showNotification("Sending rejection email...", 'loading');
-        } else {
-            showNotification("Updating status...", 'loading');
-        }
-
         // Process in background without blocking UI
         try {
             const response = await axios.put(`${API_URL}/applications/${appId}/status`,
@@ -249,7 +236,7 @@ const HrDashboard = () => {
             if (newStatus === 'Interviewing') {
                 showNotification("Interview scheduled! Email sent to candidate.", 'success');
             } else if (newStatus === 'Rejected') {
-                showNotification("Rejection email sent.", 'success');
+                showNotification("Rejection email sent.", 'error'); // Using error type for Red color as requested
             } else {
                 showNotification("Status updated.", 'success');
             }
@@ -557,6 +544,7 @@ const HrDashboard = () => {
                                     handlePostJob={handlePostJob}
                                     loading={loading}
                                     message={message}
+                                    currentUser={user} // Pass full user object
                                 />
                             </div>
                         )}
@@ -590,22 +578,8 @@ const HrDashboard = () => {
                 </div>
             </main>
 
-            {/* Notifications */}
-            {notification && (
-                <div className={`fixed bottom-4 right-4 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-slide-in-right backdrop-blur-md border ${notification.type === 'success' ? 'bg-green-500/90 text-white border-green-400' :
-                    notification.type === 'error' ? 'bg-red-500/90 text-white border-red-400' :
-                        'bg-indigo-900/90 text-white border-indigo-700'
-                    }`}>
-                    {notification.type === 'loading' ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    ) : notification.type === 'success' ? (
-                        <CheckCircle size={20} />
-                    ) : (
-                        <AlertCircle size={20} />
-                    )}
-                    <span className="font-medium">{notification.message}</span>
-                </div>
-            )}
+
+            {/* Notifications - Removed manual rendering as it's now global */}
         </div>
     );
 };

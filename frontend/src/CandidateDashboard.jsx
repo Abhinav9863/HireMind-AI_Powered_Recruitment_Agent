@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from './config';
+import { useNotification } from './context/NotificationContext';
 
 // Components
 import Sidebar from './components/dashboard/Sidebar';
@@ -14,6 +15,7 @@ import InterviewChat from './components/dashboard/InterviewChat';
 
 const CandidateDashboard = () => {
     const navigate = useNavigate();
+    const { addNotification } = useNotification();
     const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'chat' | 'ats' | 'profile' | 'applications'
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
@@ -272,13 +274,13 @@ const CandidateDashboard = () => {
             fetchMyApplications();
         } catch (error) {
             console.error(error);
-            alert(`Failed to start with profile resume: ${error.response?.data?.detail || error.message}`);
+            addNotification('error', `Failed to start with profile resume: ${error.response?.data?.detail || error.message}`);
         }
     };
 
     const handleAtsAnalyze = async (e) => {
         if (!atsJobTitle.trim()) {
-            alert("Please enter a Job Title (e.g., 'React Developer') to analyze against.");
+            addNotification('warning', "Please enter a Job Title (e.g., 'React Developer') to analyze against.");
             if (atsFileInputRef.current) atsFileInputRef.current.value = ""; // Reset file input
             return;
         }
@@ -311,7 +313,7 @@ const CandidateDashboard = () => {
                 fetchAtsHistory(); // 2. Refresh History
             } catch (error) {
                 console.error("ATS Analysis Failed", error);
-                alert("Failed to analyze resume. Please try again.");
+                addNotification('error', "Failed to analyze resume. Please try again.");
             } finally {
                 setAtsLoading(false);
             }
@@ -393,7 +395,7 @@ const CandidateDashboard = () => {
                 throw new Error(`Profile details update failed: ${err.response?.data?.detail || err.message}`);
             }
 
-            alert("Profile updated successfully!");
+            addNotification('success', "Profile updated successfully!");
             setPhotoFile(null);
             setResumeFile(null);
             setPreviewUrl(null);
@@ -402,7 +404,7 @@ const CandidateDashboard = () => {
 
         } catch (error) {
             console.error("Failed to update profile", error);
-            alert(error.message);
+            addNotification('error', error.message);
         } finally {
             setSaveLoading(false);
         }

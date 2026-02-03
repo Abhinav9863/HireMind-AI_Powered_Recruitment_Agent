@@ -4,6 +4,7 @@ import { Briefcase, GraduationCap, Loader2, X, Mail, RefreshCw } from 'lucide-re
 import ReCAPTCHA from 'react-google-recaptcha';
 import axios from 'axios';
 import { API_URL, RECAPTCHA_SITE_KEY } from './config';
+import { useNotification } from './context/NotificationContext';
 
 const AuthPage = () => {
     const [isSignUp, setIsSignUp] = useState(false);
@@ -16,6 +17,7 @@ const AuthPage = () => {
     const [captchaToken, setCaptchaToken] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
+    const { addNotification } = useNotification();
 
     // Form States
     const [formData, setFormData] = useState({
@@ -88,7 +90,10 @@ const AuthPage = () => {
             if (response.data.success) {
                 setShowOTPModal(false);
                 setIsSignUp(false);
-                alert('Account verified successfully! You can now login.');
+                setShowOTPModal(false);
+                setIsSignUp(false);
+                addNotification('success', 'Account verified successfully! You can now login.');
+                // Clear form
                 // Clear form
                 setFormData({
                     email: '',
@@ -115,7 +120,7 @@ const AuthPage = () => {
                 method: 'email'
             });
 
-            alert(`OTP resent to your email!`);
+            addNotification('info', 'OTP resent to your email!');
         } catch (err) {
             setError('Failed to resend OTP. Please try again.');
         } finally {
@@ -146,7 +151,12 @@ const AuthPage = () => {
             // Success
             const token = response.data.access_token;
             localStorage.setItem('token', token);
+            localStorage.setItem('token', token);
             localStorage.setItem('role', isHrMode ? 'hr' : 'student');
+
+            addNotification('success', `Welcome back! Logged in as ${isHrMode ? 'Recruiter' : 'Candidate'}`);
+
+            // Navigate to Dashboard
 
             // Navigate to Dashboard
             if (isHrMode) {
@@ -278,7 +288,7 @@ const AuthPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] backdrop-blur-sm">
                     <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl relative">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800">Verify Your Account (No SMS)</h2>
+                            <h2 className="text-2xl font-bold text-gray-800">Verify Your Account</h2>
                             <button onClick={() => setShowOTPModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                                 <X size={24} />
                             </button>

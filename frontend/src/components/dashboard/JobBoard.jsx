@@ -3,12 +3,19 @@ import { Search, Briefcase } from 'lucide-react';
 import JobCard from './JobCard';
 
 const JobBoard = ({ jobs, searchQuery, myApplications, handleApply }) => {
+    const appliedJobIds = new Set(myApplications.map(app => app.job_id));
+
     const filteredJobs = jobs.filter(job =>
         job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.job_type.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    ).sort((a, b) => {
+        const isAppliedA = appliedJobIds.has(a.id);
+        const isAppliedB = appliedJobIds.has(b.id);
+        if (isAppliedA === isAppliedB) return 0;
+        return isAppliedA ? 1 : -1; // Unapplied (false) comes first
+    });
 
     if (filteredJobs.length === 0 && searchQuery) {
         return (

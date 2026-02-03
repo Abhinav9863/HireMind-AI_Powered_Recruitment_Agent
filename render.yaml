@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: hiremind-backend
+    env: python
+    region: ohio # US East, close to Neon US East usually
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false # User must provide this manually
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: GROQ_API_KEY
+        sync: false # User must provide
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: 1

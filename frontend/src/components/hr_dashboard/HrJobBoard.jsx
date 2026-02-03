@@ -139,21 +139,26 @@ const HrJobBoard = ({
                                     onClick={() => fetchApplicationDetail(app.id)}
                                 >
                                     <div className="col-span-3">
-                                        <h4 className={`font-bold text-gray-900 ${!app.viewed ? 'text-indigo-900' : ''}`}>{app.candidate_name}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className={`font-bold text-gray-900 ${!app.viewed ? 'text-indigo-900' : ''}`}>{app.candidate_name}</h4>
+                                            {!app.viewed && (
+                                                <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse shadow-sm">NEW</span>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-gray-500 truncate">{app.candidate_email}</p>
                                     </div>
                                     <div className="col-span-3">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                app.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                    'bg-blue-50 text-blue-600 border-blue-100'
+                                            app.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                'bg-blue-50 text-blue-600 border-blue-100'
                                             }`}>
                                             {app.status}
                                         </span>
                                     </div>
                                     <div className="col-span-2 text-center">
                                         <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold ${app.ats_score >= 80 ? 'bg-green-100 text-green-700' :
-                                                app.ats_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-red-100 text-red-700'
+                                            app.ats_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-red-100 text-red-700'
                                             }`}>
                                             {app.ats_score}%
                                         </div>

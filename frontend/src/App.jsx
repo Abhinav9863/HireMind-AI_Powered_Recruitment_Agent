@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { NotificationProvider } from './context/NotificationContext';
 import AuthPage from './AuthPage';
 import CandidateDashboard from './CandidateDashboard';
 import HrDashboard from './HrDashboard';
@@ -19,31 +20,33 @@ const PrivateRoute = ({ children, allowedRole }) => {
 function App() {
     return (
         <BrowserRouter>
-            <Routes>
-                {/* Public Auth Routes */}
-                <Route path="/" element={<AuthPage />} />
-                <Route path="/hr" element={<AuthPage />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+            <NotificationProvider>
+                <Routes>
+                    {/* Public Auth Routes */}
+                    <Route path="/" element={<AuthPage />} />
+                    <Route path="/hr" element={<AuthPage />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
-                {/* Protected Dashboard Routes */}
-                <Route
-                    path="/student-dashboard"
-                    element={
-                        <PrivateRoute allowedRole="student">
-                            <CandidateDashboard />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/hr-dashboard"
-                    element={
-                        <PrivateRoute allowedRole="hr">
-                            <HrDashboard />
-                        </PrivateRoute>
-                    }
-                />
-            </Routes>
+                    {/* Protected Dashboard Routes */}
+                    <Route
+                        path="/student-dashboard"
+                        element={
+                            <PrivateRoute allowedRole="student">
+                                <CandidateDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/hr-dashboard"
+                        element={
+                            <PrivateRoute allowedRole="hr">
+                                <HrDashboard />
+                            </PrivateRoute>
+                        }
+                    />
+                </Routes>
+            </NotificationProvider>
         </BrowserRouter>
     );
 }

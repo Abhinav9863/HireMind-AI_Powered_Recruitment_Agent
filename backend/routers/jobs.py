@@ -25,6 +25,7 @@ async def create_job(
     job_type: str = Form(...),
     work_location: str = Form("In-Office"),  # Remote, Hybrid, In-Office
     experience_required: int = Form(0),  # ✅ FIX: Accept experience requirement from frontend
+    use_profile_policy: bool = Form(False), # ✅ NEW: Flag to use existing profile policy
     policy_file: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user), 
     session: AsyncSession = Depends(get_session)
@@ -33,6 +34,17 @@ async def create_job(
         raise HTTPException(status_code=403, detail="Only HR can post jobs")
     
     policy_path = None
+    
+    # 1. Check if using profile policy
+    if use_profile_policy:
+        if current_user.company_policy_path and os.path.exists(current_user.company_policy_path):
+             policy_path = current_user.company_policy_path
+        else:
+             # Fallback or strict error? Let's just ignore if not found for robust UX, or could raise 400.
+             # Ideally frontend controls this, but backend should be safe.
+             print(f"WARN: use_profile_policy is True but no policy found at {current_user.company_policy_path}")
+
+    # 2. Check if specific file uploaded (overrides profile policy if both present, or used if flag is False)
     if policy_file:
         # ✅ SECURITY FIX: Validate file size (10MB max)
         MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB

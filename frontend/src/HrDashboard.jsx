@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from './config';
-import { PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, X, MessageSquare, FileText, CheckCircle, AlertCircle, ChevronRight, Download, Calendar } from 'lucide-react';
+import { PlusCircle, Users, LogOut, Briefcase, MapPin, DollarSign, X, MessageSquare, FileText, CheckCircle, AlertCircle, ChevronRight, Download, Calendar, Search } from 'lucide-react';
 import HrSchedule from './HrSchedule';
 
 const HrDashboard = () => {
@@ -25,6 +25,7 @@ const HrDashboard = () => {
         location: '',
         salary_range: '',
         job_type: 'Full-time',
+        work_location: 'In-Office',  // Default: In-Office
         experience_required: 0  // Default: freshers welcome
     });
     const [policyFile, setPolicyFile] = useState(null);
@@ -34,6 +35,9 @@ const HrDashboard = () => {
     // Summary State
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryData, setSummaryData] = useState(null);
+
+    // Search State
+    const [searchQuery, setSearchQuery] = useState('');
 
     const handleSummarizeInterview = async (appId) => {
         setSummaryLoading(true);
@@ -174,7 +178,7 @@ const HrDashboard = () => {
             });
             setMessage('Job Posted Successfully!');
             setFormData({
-                title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', experience_required: 0
+                title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', work_location: 'In-Office', experience_required: 0
             });
             setPolicyFile(null);
             showNotification("Job Posted Successfully!", 'success');
@@ -346,7 +350,8 @@ const HrDashboard = () => {
                             </h3>
                             <div className="space-y-2 text-sm text-gray-700">
                                 <p><span className="font-semibold">College:</span> {candidate_info?.college || 'N/A'}</p>
-                                <p><span className="font-semibold">Experience:</span> {candidate_info?.is_fresher ? 'Fresher' : candidate_info?.previous_institution || 'N/A'}</p>
+                                <p><span className="font-semibold">Experience:</span> {selectedAppDetail.experience_years > 0 ? `${selectedAppDetail.experience_years} Years` : 'Fresher'}</p>
+                                <p><span className="font-semibold">Previous:</span> {candidate_info?.is_fresher ? 'N/A' : candidate_info?.previous_institution || 'N/A'}</p>
                                 <p><span className="font-semibold">CGPA:</span> {candidate_info?.cgpa || 'N/A'}</p>
                             </div>
                         </div>
@@ -576,6 +581,41 @@ const HrDashboard = () => {
 
                                     <div className="grid grid-cols-2 gap-6">
                                         <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Work Location</label>
+                                            <select
+                                                name="work_location"
+                                                value={formData.work_location}
+                                                onChange={handleInputChange}
+                                                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
+                                            >
+                                                <option>Remote</option>
+                                                <option>Hybrid</option>
+                                                <option>In-Office</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Minimum Experience Required
+                                                <span className="text-xs text-gray-500 ml-2">(Years)</span>
+                                            </label>
+                                            <select
+                                                name="experience_required"
+                                                value={formData.experience_required}
+                                                onChange={handleInputChange}
+                                                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
+                                            >
+                                                <option value="0">0 - Freshers Welcome</option>
+                                                <option value="1">1+ Year</option>
+                                                <option value="2">2+ Years</option>
+                                                <option value="3">3+ Years</option>
+                                                <option value="4">4+ Years</option>
+                                                <option value="5">5+ Years</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                                             <div className="relative">
                                                 <MapPin className="absolute left-3 top-3.5 text-gray-400" size={18} />
@@ -670,106 +710,202 @@ const HrDashboard = () => {
 
                         {/* MY JOBS LIST */}
                         {activeTab === 'my-jobs' && !selectedJob && (
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                {myJobs.length === 0 ? (
-                                    <div className="col-span-full text-center py-20 text-gray-500">
-                                        <Briefcase size={48} className="mx-auto mb-4 opacity-20" />
-                                        <h3 className="text-xl font-bold text-gray-700">No Jobs Posted Yet</h3>
-                                        <p>Start by creating a new position.</p>
-                                    </div>
-                                ) : (
-                                    myJobs.map((job) => (
-                                        <div key={job.id}
-                                            onClick={() => handleViewApplicants(job)}
-                                            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group"
+                            <div>
+                                {/* Search Bar */}
+                                <div className="relative mb-6">
+                                    <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search jobs by title, company, location..."
+                                        className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                         >
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div>
-                                                    <h3 className="font-bold text-lg text-gray-800 group-hover:text-indigo-700 transition-colors">{job.title}</h3>
-                                                    <p className="text-sm text-gray-500">{job.company}</p>
-                                                </div>
-                                                <span className="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full font-medium">
-                                                    {job.job_type}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                                                <div className="flex items-center gap-1"><MapPin size={14} className="text-gray-400" /> {job.location}</div>
-                                                <div className="flex items-center gap-1"><DollarSign size={14} className="text-gray-400" /> {job.salary_range}</div>
-                                            </div>
+                                            <X size={18} />
+                                        </button>
+                                    )}
+                                </div>
 
-                                            {/* Application Stats Badges */}
-                                            {(job.unviewed_count > 0 || job.total_applications > 0) && (
-                                                <div className="flex items-center gap-2 mb-4">
-                                                    {job.unviewed_count > 0 && (
-                                                        <span className="bg-purple-600 text-white text-xs px-3 py-1.5 rounded-md font-bold">
-                                                            {job.unviewed_count} New Application{job.unviewed_count !== 1 ? 's' : ''}
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                    {(() => {
+                                        const filteredJobs = myJobs.filter(job =>
+                                            job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            job.location.toLowerCase().includes(searchQuery.toLowerCase())
+                                        );
+
+                                        if (filteredJobs.length === 0 && searchQuery) {
+                                            return (
+                                                <div className="col-span-full text-center py-20 text-gray-500">
+                                                    <Search size={48} className="mx-auto mb-4 opacity-20" />
+                                                    <h3 className="text-xl font-bold text-gray-700">No Jobs Found</h3>
+                                                    <p>Try adjusting your search terms</p>
+                                                </div>
+                                            );
+                                        }
+
+                                        if (filteredJobs.length === 0) {
+                                            return (
+                                                <div className="col-span-full text-center py-20 text-gray-500">
+                                                    <Briefcase size={48} className="mx-auto mb-4 opacity-20" />
+                                                    <h3 className="text-xl font-bold text-gray-700">No Jobs Posted Yet</h3>
+                                                    <p>Start by creating a new position.</p>
+                                                </div>
+                                            );
+                                        }
+
+                                        return filteredJobs.map((job) => (
+                                            <div key={job.id}
+                                                onClick={() => handleViewApplicants(job)}
+                                                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group"
+                                            >
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <h3 className="font-bold text-lg text-gray-800 group-hover:text-indigo-700 transition-colors">{job.title}</h3>
+                                                        <p className="text-sm text-gray-500">{job.company}</p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${job.work_location === 'Remote' ? 'bg-green-50 text-green-700 border-green-100' : job.work_location === 'Hybrid' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-gray-50 text-gray-700 border-gray-100'}`}>
+                                                            {job.work_location || 'In-Office'}
                                                         </span>
-                                                    )}
-                                                    {job.total_applications > 0 && (
-                                                        <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-md font-medium">
-                                                            {job.total_applications} Total
+                                                        <span className="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full font-medium">
+                                                            {job.job_type}
                                                         </span>
-                                                    )}
+                                                    </div>
                                                 </div>
-                                            )}
-
-                                            <div className="flex items-center text-sm font-medium text-indigo-600">
-                                                View Applicants <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        )}
-
-                        {/* APPLICANT LIST */}
-                        {activeTab === 'my-jobs' && selectedJob && (
-                            <div className="space-y-4">
-                                {applications.length === 0 ? (
-                                    <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
-                                        <Users size={48} className="mx-auto mb-4 opacity-20" />
-                                        <h3 className="text-xl font-bold text-gray-700">No Applicants Yet</h3>
-                                        <p>Waiting for candidates to apply.</p>
-                                    </div>
-                                ) : (
-                                    applications.map((app) => (
-                                        <div
-                                            key={app.id}
-                                            onClick={() => fetchApplicationDetail(app.id)}
-                                            className={`bg-white p-5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${selectedAppId === app.id ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-gray-100 hover:border-indigo-300 hover:shadow-sm'}`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${app.ats_score > 75 ? 'bg-green-100 text-green-700' : app.ats_score > 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                                                    {app.ats_score}%
+                                                <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                                                    <div className="flex items-center gap-1"><MapPin size={14} className="text-gray-400" /> {job.location}</div>
+                                                    <div className="flex items-center gap-1"><DollarSign size={14} className="text-gray-400" /> {job.salary_range}</div>
                                                 </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h4 className="font-bold text-gray-900">{app.candidate_name}</h4>
-                                                        {!app.viewed ? (
-                                                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
-                                                                NEW
+
+                                                {/* Application Stats Badges */}
+                                                {(job.unviewed_count > 0 || job.total_applications > 0) && (
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        {job.unviewed_count > 0 && (
+                                                            <span className="bg-purple-600 text-white text-xs px-3 py-1.5 rounded-md font-bold">
+                                                                {job.unviewed_count} New Application{job.unviewed_count !== 1 ? 's' : ''}
                                                             </span>
-                                                        ) : (
-                                                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-bold border border-gray-200">
-                                                                VIEWED
+                                                        )}
+                                                        {job.total_applications > 0 && (
+                                                            <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-md font-medium">
+                                                                {job.total_applications} Total
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-gray-500">{app.candidate_email}</p>
+                                                )}
+
+                                                <div className="flex items-center text-sm font-medium text-indigo-600">
+                                                    View Applicants <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-indigo-50 text-indigo-700' :
-                                                    app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
-                                                        'bg-gray-100 text-gray-600'
-                                                    }`}>
-                                                    {app.status}
-                                                </span>
-                                                <ChevronRight size={18} className="inline ml-2 text-gray-400" />
+                                        ))
+                                    })()}
+                                </div>
+                            </div>
+                        )}
+
+
+                        {/* APPLICANT LIST */}
+                        {activeTab === 'my-jobs' && selectedJob && (
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <button onClick={() => { setSelectedJob(null); setSelectedAppId(null); setSelectedAppDetail(null); setSearchQuery(''); }} className="text-indigo-600 hover:text-indigo-700 flex items-center gap-2 font-medium">
+                                        ← Back to Jobs
+                                    </button>
+                                </div>
+
+                                {/* Search Bar for Applicants */}
+                                <div className="relative mb-6">
+                                    <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search candidates by name, email, or status..."
+                                        className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    {(() => {
+                                        const filteredApplications = applications.filter(app =>
+                                            app.candidate_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            app.candidate_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            app.status.toLowerCase().includes(searchQuery.toLowerCase())
+                                        );
+
+                                        if (filteredApplications.length === 0 && searchQuery) {
+                                            return (
+                                                <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
+                                                    <Search size={48} className="mx-auto mb-4 opacity-20" />
+                                                    <h3 className="text-xl font-bold text-gray-700">No Candidates Found</h3>
+                                                    <p>Try adjusting your search terms</p>
+                                                </div>
+                                            );
+                                        }
+
+                                        if (filteredApplications.length === 0) {
+                                            return (
+                                                <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
+                                                    <Users size={48} className="mx-auto mb-4 opacity-20" />
+                                                    <h3 className="text-xl font-bold text-gray-700">No Applicants Yet</h3>
+                                                    <p>Waiting for candidates to apply.</p>
+                                                </div>
+                                            );
+                                        }
+
+                                        return filteredApplications.map((app) => (
+                                            <div
+                                                key={app.id}
+                                                onClick={() => fetchApplicationDetail(app.id)}
+                                                className={`bg-white p-5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${selectedAppId === app.id ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-gray-100 hover:border-indigo-300 hover:shadow-sm'}`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${app.ats_score > 75 ? 'bg-green-100 text-green-700' : app.ats_score > 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {app.ats_score}%
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className="font-bold text-gray-900">{app.candidate_name}</h4>
+                                                            {!app.viewed ? (
+                                                                <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                                                                    NEW
+                                                                </span>
+                                                            ) : (
+                                                                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-bold border border-gray-200">
+                                                                    VIEWED
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-gray-500">{app.candidate_email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-indigo-50 text-indigo-700' :
+                                                        app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
+                                                            'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                        {app.status}
+                                                    </span>
+                                                    <ChevronRight size={18} className="inline ml-2 text-gray-400" />
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
-                                )}
+                                        ))
+                                    })()}
+                                </div>
                             </div>
                         )}
                     </div>

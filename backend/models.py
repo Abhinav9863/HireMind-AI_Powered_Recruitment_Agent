@@ -43,6 +43,7 @@ class Job(SQLModel, table=True):
     location: str
     salary_range: str
     job_type: str = "Full-time"
+    work_location: str = Field(default="In-Office")  # Remote, Hybrid, In-Office
     policy_path: Optional[str] = None
     experience_required: int = Field(default=0)  # Minimum years of experience (0 = freshers welcome)
     hr_id: int = Field(foreign_key="user.id")
@@ -59,6 +60,7 @@ class Application(SQLModel, table=True):
     ats_report: Optional[dict] = Field(default={}, sa_column=Column(JSON))
     interview_transcript: Optional[str] = None
     viewed: bool = Field(default=False)  # Track if HR has viewed this application
+    experience_years: int = Field(default=0)  # Candidate's years of experience
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Interview Logic Fields

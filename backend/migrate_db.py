@@ -1,39 +1,34 @@
 import asyncio
-import os
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
-from dotenv import load_dotenv
+from sqlalchemy import text
+import os
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    print("DATABASE_URL not found")
-    exit(1)
-
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Adjust connection string for local host access (exposed port 5435)
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+asyncpg://hiremind:password@localhost:5435/hiremind_db")
 
 async def migrate():
+    print(f"🔌 Connecting to database...")
+    engine = create_async_engine(DATABASE_URL, echo=True)
+    
     async with engine.begin() as conn:
-        print("Migrating schema...")
+        print("🚀 Running migrations...")
         
-        stmts = [
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS profile_picture VARCHAR',
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS resume_path VARCHAR',
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS bio VARCHAR',
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS phone_number VARCHAR',
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS company_name VARCHAR',
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS university VARCHAR'
-        ]
-        
-        for stmt in stmts:
-            try:
-                await conn.execute(text(stmt))
-                print(f"Executed: {stmt}")
-            except Exception as e:
-                print(f"Error executing {stmt}: {e}")
-                
-    print("Migration complete.")
+        # 1. Add work_location to Job table
+        try:
+            await conn.execute(text("ALTER TABLE job ADD COLUMN work_location VARCHAR DEFAULT 'In-Office';"))
+            print("✅ Added work_location to job table")
+        except Exception as e:
+            print(f"⚠️  work_location might already exist: {e}")
+
+        # 2. Add experience_years to Application table
+        try:
+            await conn.execute(text("ALTER TABLE application ADD COLUMN experience_years INTEGER DEFAULT 0;"))
+            print("✅ Added experience_years to application table")
+        except Exception as e:
+            print(f"⚠️  experience_years might already exist: {e}")
+
+    await engine.dispose()
+    print("✨ Migration completed")
 
 if __name__ == "__main__":
     asyncio.run(migrate())

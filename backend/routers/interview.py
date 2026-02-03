@@ -112,6 +112,7 @@ import traceback
 @router.post("/start", response_model=ChatResponse)
 async def start_interview(
     job_id: int = Form(...),
+    experience_years: int = Form(0),  # Candidate's years of experience
     resume: Optional[UploadFile] = File(None),
     use_profile_resume: bool = Form(False),
     current_user: User = Depends(get_current_user),
@@ -249,7 +250,8 @@ async def start_interview(
             chat_history=[],
             ats_score=ats_result.get("score", 0),
             ats_feedback=ats_result.get("feedback", "Pending analysis."),
-            ats_report=ats_result
+            ats_report=ats_result,
+            experience_years=experience_years  # Store candidate's experience
         )
         
         session.add(new_app)

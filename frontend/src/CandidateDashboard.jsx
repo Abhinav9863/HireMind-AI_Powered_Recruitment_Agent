@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from './config';
-import { LogOut, Send, Paperclip, FileText, User, Briefcase, ChevronRight, UploadCloud, CheckCircle, MapPin, DollarSign } from 'lucide-react';
+import { LogOut, Send, Paperclip, FileText, User, Briefcase, ChevronRight, UploadCloud, CheckCircle, MapPin, DollarSign, Search, X } from 'lucide-react';
 
 const CandidateDashboard = () => {
     const navigate = useNavigate();
@@ -29,6 +29,9 @@ const CandidateDashboard = () => {
     // Profile State
     const [profile, setProfile] = useState(null);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+    // Search State
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fileInputRef = useRef(null);
     const atsFileInputRef = useRef(null);
@@ -178,6 +181,7 @@ const CandidateDashboard = () => {
             const formData = new FormData();
             formData.append('resume', file);
             formData.append('job_id', selectedJob.id);
+            formData.append('experience_years', 0); // Default to 0 since we removed input
 
             const token = localStorage.getItem('token');
             try {
@@ -466,16 +470,56 @@ const CandidateDashboard = () => {
                     {/* JOB BOARD VIEW */}
                     {activeTab === 'jobs' && (
                         <div className="h-full overflow-y-auto p-8">
-                            {/* ... existing jobs code ... */}
+                            {/* Search Bar */}
+                            <div className="relative mb-6">
+                                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search jobs by title, company, location, or type..."
+                                    className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {jobs.length === 0 ? (
-                                    <div className="col-span-full text-center py-20 text-gray-500">
-                                        <Briefcase size={48} className="mx-auto mb-4 opacity-20" />
-                                        <h3 className="text-xl font-bold text-gray-700">No Openings Found</h3>
-                                        <p>Check back later for new opportunities.</p>
-                                    </div>
-                                ) : (
-                                    jobs.map(job => (
+                                {(() => {
+                                    const filteredJobs = jobs.filter(job =>
+                                        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        job.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        job.job_type.toLowerCase().includes(searchQuery.toLowerCase())
+                                    );
+
+                                    if (filteredJobs.length === 0 && searchQuery) {
+                                        return (
+                                            <div className="col-span-full text-center py-20 text-gray-500">
+                                                <Search size={48} className="mx-auto mb-4 opacity-20" />
+                                                <h3 className="text-xl font-bold text-gray-700">No Jobs Found</h3>
+                                                <p>Try adjusting your search terms</p>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (filteredJobs.length === 0) {
+                                        return (
+                                            <div className="col-span-full text-center py-20 text-gray-500">
+                                                <Briefcase size={48} className="mx-auto mb-4 opacity-20" />
+                                                <h3 className="text-xl font-bold text-gray-700">No Openings Found</h3>
+                                                <p>Check back later for new opportunities.</p>
+                                            </div>
+                                        );
+                                    }
+
+                                    return filteredJobs.map(job => (
                                         <div key={job.id} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex flex-col">
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center font-bold text-lg text-indigo-600">
@@ -484,6 +528,9 @@ const CandidateDashboard = () => {
                                                 <div className="flex flex-wrap gap-2 mb-4">
                                                     <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
                                                         {job.job_type}
+                                                    </span>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${job.work_location === 'Remote' ? 'bg-green-100 text-green-700 border-green-200' : job.work_location === 'Hybrid' ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                                        {job.work_location || 'In-Office'}
                                                     </span>
                                                     {job.experience_required !== undefined && (
                                                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${job.experience_required === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
@@ -498,9 +545,14 @@ const CandidateDashboard = () => {
                                             <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                                                 <MapPin size={14} /> {job.location}
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                                                 <DollarSign size={14} /> {job.salary_range}
                                             </div>
+                                            {job.experience_required !== undefined && (
+                                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                                                    <Briefcase size={14} /> {job.experience_required === 0 ? 'No Experience Required' : `${job.experience_required}+ Years Experience`}
+                                                </div>
+                                            )}
 
                                             {job.policy_path && (
                                                 <div className="mb-4 text-xs">
@@ -534,7 +586,7 @@ const CandidateDashboard = () => {
                                             </div>
                                         </div>
                                     ))
-                                )}
+                                })()}
                             </div>
                         </div>
                     )}
@@ -1017,6 +1069,7 @@ const CandidateDashboard = () => {
                     }
                 </div >
             </main >
+
         </div >
     );
 };

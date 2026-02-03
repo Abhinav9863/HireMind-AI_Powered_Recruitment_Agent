@@ -50,6 +50,8 @@ class JobCreate(BaseModel):
     location: str
     salary_range: str
     job_type: str
+    work_location: str = "In-Office"
+    experience_required: int = 0
 
 class JobRead(JobCreate):
     id: int
@@ -57,6 +59,7 @@ class JobRead(JobCreate):
     hr_id: int
     created_at: datetime
     policy_path: Optional[str] = None
+    work_location: str = "In-Office"
     unviewed_count: int = 0
     total_applications: int = 0
 
@@ -64,6 +67,7 @@ class JobRead(JobCreate):
 from datetime import datetime
 class ApplicationCreate(BaseModel):
     job_id: int
+    experience_years: int = 0
 
 class ApplicationRead(BaseModel):
     id: int
@@ -73,6 +77,7 @@ class ApplicationRead(BaseModel):
     ats_feedback: Optional[str]
     status: str
     viewed: bool = False
+    experience_years: int = 0
     created_at: datetime
     
 class ApplicationReadWithStudent(ApplicationRead):

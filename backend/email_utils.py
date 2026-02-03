@@ -96,7 +96,7 @@ async def send_email_otp(to_email: str, full_name: str, otp: str):
         message.attach(MIMEText(text_body, "plain"))
         message.attach(MIMEText(html_body, "html"))
         
-            print(f"🔄 Connecting to SMTP Server {smtp_server}:{smtp_port}...")
+        print(f"🔄 Connecting to SMTP Server {smtp_server}:{smtp_port}...")
         
         # Explicit SMTP connection for debugging
         smtp = aiosmtplib.SMTP(hostname=smtp_server, port=smtp_port, use_tls=(smtp_port==465), start_tls=(smtp_port!=465), timeout=30)

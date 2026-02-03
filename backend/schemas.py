@@ -22,6 +22,7 @@ class UserRead(BaseModel):
     resume_path: Optional[str] = None
     bio: Optional[str] = None
     phone_number: Optional[str] = None
+    company_policy_path: Optional[str] = None
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None

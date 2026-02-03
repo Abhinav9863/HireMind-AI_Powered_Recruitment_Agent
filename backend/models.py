@@ -24,6 +24,7 @@ class User(SQLModel, table=True):
     resume_path: Optional[str] = None
     bio: Optional[str] = None
     phone_number: Optional[str] = None
+    company_policy_path: Optional[str] = None  # Path to uploaded company policy PDF
     
     # Email Verification fields (OTP-based)
     email_otp: Optional[str] = None  # Stores the current email OTP code

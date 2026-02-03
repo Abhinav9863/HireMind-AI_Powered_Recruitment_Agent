@@ -26,10 +26,8 @@ async def update_user_profile(
 ):
     if user_update.full_name is not None:
         current_user.full_name = user_update.full_name
-    if user_update.university is not None:
-        current_user.university = user_update.university
-    if user_update.company_name is not None:
-        current_user.company_name = user_update.company_name
+    if user_update.university_or_company is not None:
+        current_user.university_or_company = user_update.university_or_company
     if user_update.bio is not None:
         current_user.bio = user_update.bio
     if user_update.phone_number is not None:
@@ -113,6 +111,41 @@ async def upload_default_resume(
         file_object.write(content)
         
     current_user.resume_path = file_location
+    session.add(current_user)
+    await session.commit()
+    await session.refresh(current_user)
+    return current_user
+
+@router.post("/upload/policy", response_model=UserRead)
+async def upload_company_policy(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Limit file size to 10MB
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Policy file too large. Maximum size is 10MB")
+    
+    # Validate PDF
+    filename = file.filename.lower()
+    if not filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed for company policies")
+    
+    import time
+    safe_filename = os.path.basename(file.filename)
+    safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
+    
+    os.makedirs("uploads", exist_ok=True)
+    
+    timestamp = int(time.time())
+    file_location = f"uploads/policy_{current_user.id}_{timestamp}_{safe_filename}"
+    
+    with open(file_location, "wb") as file_object:
+        file_object.write(content)
+        
+    current_user.company_policy_path = file_location
     session.add(current_user)
     await session.commit()
     await session.refresh(current_user)

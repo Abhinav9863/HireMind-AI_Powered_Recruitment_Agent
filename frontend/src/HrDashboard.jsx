@@ -58,14 +58,25 @@ const HrDashboard = () => {
     }, [activeTab]);
 
     const fetchMyJobs = async () => {
-        const token = localStorage.getItem('token');
         try {
+            const token = localStorage.getItem('token');
             const response = await axios.get(`${API_URL}/jobs/my`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setMyJobs(response.data);
+
+            // Sort jobs: most new applications first, then by creation date
+            const sortedJobs = response.data.sort((a, b) => {
+                // First priority: jobs with new applications
+                if (b.unviewed_count !== a.unviewed_count) {
+                    return b.unviewed_count - a.unviewed_count;
+                }
+                // Second priority: most recent jobs
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+
+            setMyJobs(sortedJobs);
         } catch (error) {
-            console.error("Failed to fetch jobs", error);
+            console.error(error);
         }
     };
 
@@ -81,10 +92,29 @@ const HrDashboard = () => {
         }
     };
 
+    const [notification, setNotification] = useState(null); // { message, type: 'loading' | 'success' | 'error' }
+
+    // ... existing code ...
+
+    const showNotification = (message, type = 'info') => {
+        setNotification({ message, type });
+        if (type !== 'loading') {
+            setTimeout(() => setNotification(null), 3000);
+        }
+    };
+
     const fetchApplicationDetail = async (appId) => {
         setDetailLoading(true);
         setSelectedAppId(appId);
         setSummaryData(null);
+
+        // Optimistic update: Mark as viewed locally immediately
+        setApplications(prevApps =>
+            prevApps.map(app =>
+                app.id === appId ? { ...app, viewed: true } : app
+            )
+        );
+
         const token = localStorage.getItem('token');
         try {
             const response = await axios.get(`${API_URL}/applications/${appId}`, {
@@ -98,25 +128,21 @@ const HrDashboard = () => {
         }
     };
 
-    const handleViewApplicants = (job) => {
-        setSelectedJob(job);
-        fetchApplications(job.id);
-        setSelectedAppId(null);
-        setSelectedAppDetail(null);
-        setSummaryData(null);
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/');
     };
 
     const handleBackToJobs = () => {
         setSelectedJob(null);
         setApplications([]);
         setSelectedAppId(null);
-        setSelectedAppDetail(null);
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        navigate('/');
+    const handleViewApplicants = (job) => {
+        setSelectedJob(job);
+        fetchApplications(job.id);
     };
 
     const handleInputChange = (e) => {
@@ -131,67 +157,130 @@ const HrDashboard = () => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
-        const token = localStorage.getItem('token');
 
-        const data = new FormData();
-        data.append('title', formData.title);
-        data.append('description', formData.description);
-        data.append('location', formData.location);
-        data.append('salary_range', formData.salary_range);
-        data.append('job_type', formData.job_type);
-        data.append('experience_required', formData.experience_required);  // Add experience field
+        const token = localStorage.getItem('token');
+        const jobData = new FormData();
+        Object.keys(formData).forEach(key => jobData.append(key, formData[key]));
         if (policyFile) {
-            data.append('policy_file', policyFile);
+            jobData.append('policy_file', policyFile);
         }
 
         try {
-            await axios.post(`${API_URL}/jobs/`, data, {
-                headers: { Authorization: `Bearer ${token}` }
+            await axios.post(`${API_URL}/jobs/`, jobData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
             });
             setMessage('Job Posted Successfully!');
-            setFormData({ title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', experience_required: 0 });
+            setFormData({
+                title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', experience_required: 0
+            });
             setPolicyFile(null);
-            setTimeout(() => {
-                setActiveTab('my-jobs');
-                fetchMyJobs();
-            }, 1000);
+            showNotification("Job Posted Successfully!", 'success');
         } catch (error) {
             console.error(error);
             setMessage('Failed to post job.');
+            showNotification("Failed to post job.", 'error');
         } finally {
             setLoading(false);
         }
     };
 
+
     const handleUpdateStatus = async (appId, newStatus) => {
         const token = localStorage.getItem('token');
+
+        // Optimistic Update: Update UI immediately
+        if (activeTab === 'my-jobs' && selectedJob) {
+            // Update detail view immediately
+            if (selectedAppDetail && selectedAppDetail.id === appId) {
+                setSelectedAppDetail(prev => ({ ...prev, status: newStatus }));
+            }
+
+            // Update application list immediately
+            setApplications(prevApps =>
+                prevApps.map(app =>
+                    app.id === appId ? { ...app, status: newStatus } : app
+                )
+            );
+        }
+
+        // Show brief notification (non-blocking)
+        if (newStatus === 'Interviewing') {
+            showNotification("Sending interview details via email...", 'loading');
+        } else if (newStatus === 'Rejected') {
+            showNotification("Sending rejection email...", 'loading');
+        } else {
+            showNotification("Updating status...", 'loading');
+        }
+
+        // Process in background without blocking UI
         try {
-            await axios.put(`${API_URL}/applications/${appId}/status`,
+            const response = await axios.put(`${API_URL}/applications/${appId}/status`,
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Update local state smoothly
+
+            // Show Success Notification
+            if (newStatus === 'Interviewing') {
+                showNotification("Interview scheduled! Email sent to candidate.", 'success');
+            } else if (newStatus === 'Rejected') {
+                showNotification("Rejection email sent.", 'success');
+            } else {
+                showNotification("Status updated.", 'success');
+            }
+
+            // Refresh data from server to ensure consistency
             if (activeTab === 'my-jobs' && selectedJob) {
-                fetchApplications(selectedJob.id); // Refresh list
+                await fetchApplications(selectedJob.id);
 
-                // If detail view is open, update it too
+                // Also refresh the detail view if it's open
                 if (selectedAppDetail && selectedAppDetail.id === appId) {
-                    setSelectedAppDetail(prev => ({ ...prev, status: newStatus }));
-                }
-
-                // Show Success Message
-                if (newStatus === 'Interviewing') {
-                    alert("Success! Candidate accepted and Interview Email sent.");
-                } else if (newStatus === 'Rejected') {
-                    alert("Candidate rejected. Rejection email sent.");
-                } else {
-                    alert("Status updated successfully.");
+                    try {
+                        const detailResponse = await axios.get(`${API_URL}/applications/${appId}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setSelectedAppDetail(detailResponse.data);
+                    } catch (err) {
+                        console.error("Failed to refresh detail view", err);
+                    }
                 }
             }
         } catch (error) {
             console.error("Failed to update status", error);
             const errorMsg = error.response?.data?.detail || "Failed to update status";
-            alert(errorMsg);
+            showNotification(errorMsg, 'error');
+
+            // Revert optimistic update on error
+            if (activeTab === 'my-jobs' && selectedJob) {
+                await fetchApplications(selectedJob.id);
+                if (selectedAppDetail && selectedAppDetail.id === appId) {
+                    try {
+                        const result = await axios.get(`${API_URL}/applications/${appId}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setSelectedAppDetail(result.data);
+                    } catch (err) {
+                        console.error("Failed to revert detail view", err);
+                    }
+                }
+            }
+        }
+    };
+
+    const fetchJobSummary = async (jobId) => {
+        const token = localStorage.getItem('token');
+        setSummaryLoading(true);
+        try {
+            const response = await axios.get(`${API_URL}/jobs/${jobId}/summary`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setJobSummary(response.data);
+        } catch (error) {
+            console.error("Failed to fetch job summary", error);
+        } finally {
+            setSummaryLoading(false);
         }
     };
 
@@ -199,15 +288,15 @@ const HrDashboard = () => {
     const renderApplicationDetail = () => {
         if (!selectedAppDetail) return null;
 
-        const { student_name, student_email, ats_score, status, candidate_info, chat_history, ats_report, resume_path } = selectedAppDetail;
+        const { candidate_name, candidate_email, ats_score, status, candidate_info, chat_history, ats_report, resume_path } = selectedAppDetail;
 
         return (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 h-full flex flex-col overflow-hidden animate-fade-in-right">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">{student_name}</h2>
-                        <p className="text-gray-500 text-sm mb-2">{student_email}</p>
+                        <h2 className="text-2xl font-bold text-gray-900">{candidate_name}</h2>
+                        <p className="text-gray-500 text-sm mb-2">{candidate_email}</p>
                         <div className="flex items-center gap-3 mt-3">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${ats_score > 75 ? 'bg-green-100 text-green-700' : ats_score > 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                                 ATS: {ats_score}%
@@ -230,13 +319,13 @@ const HrDashboard = () => {
                         )}
                         <button
                             onClick={() => handleUpdateStatus(selectedAppDetail.id, 'Interviewing')}
-                            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition"
+                            className="px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
                         >
                             Accept
                         </button>
                         <button
                             onClick={() => handleUpdateStatus(selectedAppDetail.id, 'Rejected')}
-                            className="bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-50 transition"
+                            className="px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50"
                         >
                             Reject
                         </button>
@@ -401,19 +490,19 @@ const HrDashboard = () => {
                 <div className="p-4 flex-1">
                     <nav className="space-y-1">
                         <button
-                            onClick={() => { setActiveTab('my-jobs'); setSelectedJob(null); }}
+                            onClick={() => { setActiveTab('my-jobs'); setSelectedJob(null); setSelectedAppDetail(null); setSelectedAppId(null); }}
                             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-sm font-medium ${activeTab === 'my-jobs' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Briefcase size={18} /> My Jobs
                         </button>
                         <button
-                            onClick={() => { setActiveTab('post-job'); setSelectedJob(null); }}
+                            onClick={() => { setActiveTab('post-job'); setSelectedJob(null); setSelectedAppDetail(null); setSelectedAppId(null); }}
                             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-sm font-medium ${activeTab === 'post-job' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <PlusCircle size={18} /> Post a Job
                         </button>
                         <button
-                            onClick={() => { setActiveTab('schedule'); setSelectedJob(null); }}
+                            onClick={() => { setActiveTab('schedule'); setSelectedJob(null); setSelectedAppDetail(null); setSelectedAppId(null); }}
                             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-sm font-medium ${activeTab === 'schedule' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Calendar size={18} /> Schedule
@@ -603,10 +692,27 @@ const HrDashboard = () => {
                                                     {job.job_type}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
+                                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                                                 <div className="flex items-center gap-1"><MapPin size={14} className="text-gray-400" /> {job.location}</div>
                                                 <div className="flex items-center gap-1"><DollarSign size={14} className="text-gray-400" /> {job.salary_range}</div>
                                             </div>
+
+                                            {/* Application Stats Badges */}
+                                            {(job.unviewed_count > 0 || job.total_applications > 0) && (
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    {job.unviewed_count > 0 && (
+                                                        <span className="bg-purple-600 text-white text-xs px-3 py-1.5 rounded-md font-bold">
+                                                            {job.unviewed_count} New Application{job.unviewed_count !== 1 ? 's' : ''}
+                                                        </span>
+                                                    )}
+                                                    {job.total_applications > 0 && (
+                                                        <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-md font-medium">
+                                                            {job.total_applications} Total
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center text-sm font-medium text-indigo-600">
                                                 View Applicants <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
                                             </div>
@@ -637,8 +743,19 @@ const HrDashboard = () => {
                                                     {app.ats_score}%
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-gray-900">{app.student_name}</h4>
-                                                    <p className="text-xs text-gray-500">{app.student_email}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="font-bold text-gray-900">{app.candidate_name}</h4>
+                                                        {!app.viewed ? (
+                                                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                                                                NEW
+                                                            </span>
+                                                        ) : (
+                                                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-bold border border-gray-200">
+                                                                VIEWED
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">{app.candidate_email}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -648,6 +765,7 @@ const HrDashboard = () => {
                                                     }`}>
                                                     {app.status}
                                                 </span>
+                                                <ChevronRight size={18} className="inline ml-2 text-gray-400" />
                                             </div>
                                         </div>
                                     ))
@@ -670,8 +788,41 @@ const HrDashboard = () => {
                             </div>
                         )
                     }
-                </div >
-            </main >
+                </div>
+            </main>
+
+            {/* Notification Card */}
+            {
+                notification && (
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
+                        <div className={`flex items-center gap-4 px-6 py-4 rounded-xl shadow-2xl border-l-4 backdrop-blur-sm ${notification.type === 'loading' ? 'bg-white/95 border-indigo-500 text-indigo-900' :
+                            notification.type === 'error' ? 'bg-white/95 border-red-500 text-red-900' :
+                                notification.message.toLowerCase().includes('rejected') ? 'bg-white/95 border-red-500 text-red-900' :
+                                    'bg-white/95 border-green-500 text-green-900'
+                            }`}>
+                            {notification.type === 'loading' && (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+                            )}
+                            {(notification.type === 'success' && !notification.message.toLowerCase().includes('rejected')) && <CheckCircle size={20} className="text-green-600" />}
+                            {(notification.type === 'error' || notification.message.toLowerCase().includes('rejected')) && <AlertCircle size={20} className="text-red-600" />}
+
+                            <div>
+                                <p className="font-bold text-sm">
+                                    {notification.type === 'loading' ? 'Processing...' :
+                                        notification.type === 'success' ? 'Success' : 'Error'}
+                                </p>
+                                <p className="text-xs opacity-90">{notification.message}</p>
+                            </div>
+
+                            {notification.type !== 'loading' && (
+                                <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-75 transition-opacity">
+                                    <X size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )
+            }
         </div >
     );
 };

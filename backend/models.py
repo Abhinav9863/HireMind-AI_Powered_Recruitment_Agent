@@ -58,6 +58,7 @@ class Application(SQLModel, table=True):
     ats_feedback: Optional[str] = None
     ats_report: Optional[dict] = Field(default={}, sa_column=Column(JSON))
     interview_transcript: Optional[str] = None
+    viewed: bool = Field(default=False)  # Track if HR has viewed this application
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Interview Logic Fields

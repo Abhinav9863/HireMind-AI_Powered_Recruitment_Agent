@@ -160,20 +160,28 @@ async def get_application_detail(
     if job.hr_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access Denied: You do not own this job posting.")
     
-    return ApplicationDetail(
-        id=application.id,
-        job_id=application.job_id,
-        student_id=application.student_id,
-        status=application.status,
-        ats_score=application.ats_score,
-        ats_feedback=application.ats_feedback,
-        created_at=application.created_at,
-        student_name=student.full_name,
-        student_email=student.email,
-        resume_path=application.resume_path,
-        resume_text=application.resume_text,
-        candidate_info=application.candidate_info,
-        chat_history=application.chat_history,
-        ats_report=application.ats_report,
-        interview_step=application.interview_step
-    )
+    # ✅ Mark as viewed when HR opens the application
+    if not application.viewed:
+        application.viewed = True
+        session.add(application)
+        await session.commit()
+        await session.refresh(application)
+    
+    return {
+        "id": application.id,
+        "job_id": application.job_id,
+        "student_id": application.student_id,
+        "ats_score": application.ats_score,
+        "ats_feedback": application.ats_feedback,
+        "status": application.status,
+        "viewed": application.viewed,
+        "created_at": application.created_at,
+        "candidate_name": student.full_name,
+        "candidate_email": student.email,
+        "resume_path": student.resume_path,
+        "resume_text": application.resume_text,
+        "candidate_info": application.candidate_info,
+        "chat_history": application.chat_history,
+        "ats_report": application.ats_report,
+        "interview_step": application.interview_step
+    }

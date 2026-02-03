@@ -1,8 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from loguru import logger
+import sys
 
 from database import init_db, get_session
 from models import User, UserRole
@@ -13,12 +18,24 @@ import secrets
 from datetime import datetime, timedelta
 from pydantic import BaseModel, EmailStr
 
+# ✅ SECURITY FIX: Structured logging setup (Bug #12)
+logger.remove()  # Remove default handler
+logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}", level="INFO")
+logger.add("logs/app.log", rotation="1 day", retention="7 days", level="DEBUG")  # File logging
+
+# ✅ SECURITY FIX: Rate limiter setup (Bug #8)
+limiter = Limiter(key_func=get_remote_address)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     yield
 
 app = FastAPI(title="HireMind API", lifespan=lifespan)
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(interview.router)
 app.include_router(jobs.router)
@@ -41,6 +58,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ✅ SECURITY FIX: Add security headers to mitigate XSS risk (Bug #6)
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Enable XSS protection
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Content Security Policy - helps prevent XSS
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+    # HSTS for HTTPS (important in production)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+# ✅ LOGGING: Request logging middleware (Bug #12)
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request: {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"Response: {response.status_code} for {request.method} {request.url.path}")
+    return response
 
 from fastapi.staticfiles import StaticFiles
 import os
@@ -69,6 +110,34 @@ async def signup(user: UserCreate, session: AsyncSession = Depends(get_session))
     5. User verifies using EITHER OTP
     6. Account activated
     """
+    
+    # ✅ SECURITY FIX: Validate password strength (Bug #9)
+    password = user.password
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long"
+        )
+    if not any(c.isupper() for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one uppercase letter"
+        )
+    if not any(c.islower() for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one lowercase letter"
+        )
+    if not any(c.isdigit() for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one number"
+        )
+    if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)"
+        )
     
     # Check if user exists
     result = await session.execute(select(User).where(User.email == user.email))
@@ -134,8 +203,10 @@ class LoginRequest(BaseModel):
     password: str
     role: str # 'student' or 'hr' - Enforced context
 
+# ✅ SECURITY FIX: Rate limit login attempts (Bug #8)
 @app.post("/auth/login", response_model=Token)
-async def login(user_data: LoginRequest, session: AsyncSession = Depends(get_session)):
+@limiter.limit("5/minute")  # Max 5 login attempts per minute per IP
+async def login(request: Request, user_data: LoginRequest, session: AsyncSession = Depends(get_session)):
     
     result = await session.execute(select(User).where(User.email == user_data.email))
     user = result.scalars().first()

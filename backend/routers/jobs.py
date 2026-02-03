@@ -33,13 +33,33 @@ async def create_job(
     
     policy_path = None
     if policy_file:
-        # Sanitize filename
-        safe_filename = "".join([c for c in policy_file.filename if c.isalnum() or c in "._-"]).strip()
+        # ✅ SECURITY FIX: Validate file size (10MB max)
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+        content = await policy_file.read()
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB")
+        
+        # ✅ SECURITY FIX: Validate file type
+        allowed_extensions = {'.pdf'}
+        filename = policy_file.filename.lower()
+        if not any(filename.endswith(ext) for ext in allowed_extensions):
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed for policy documents")
+        
+        # ✅ SECURITY FIX: Use basename to prevent path traversal
+        safe_filename = os.path.basename(policy_file.filename)
+        safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
+        
         if not safe_filename:
              safe_filename = "policy_doc.pdf"
+        
+        # Add timestamp to prevent file overwrites
+        import time
+        timestamp = int(time.time())
+        safe_filename = f"policy_{current_user.id}_{timestamp}_{safe_filename}"
+        
         file_location = f"uploads/{safe_filename}"
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(policy_file.file, file_object)
+        with open(file_location, "wb") as file_object:
+            file_object.write(content)
         policy_path = file_location
 
     new_job = Job(
@@ -72,7 +92,24 @@ async def get_my_jobs(current_user: User = Depends(get_current_user), session: A
         
     result = await session.execute(select(Job).where(Job.hr_id == current_user.id).order_by(Job.created_at.desc()))
     jobs = result.scalars().all()
-    return jobs
+    
+    # For each job, count unviewed and total applications
+    jobs_with_counts = []
+    for job in jobs:
+        app_result = await session.execute(
+            select(Application).where(Application.job_id == job.id)
+        )
+        applications = app_result.scalars().all()
+        
+        unviewed_count = sum(1 for app in applications if not app.viewed)
+        total_count = len(applications)
+        
+        job_dict = job.dict()
+        job_dict['unviewed_count'] = unviewed_count
+        job_dict['total_applications'] = total_count
+        jobs_with_counts.append(job_dict)
+    
+    return jobs_with_counts
 
 @router.get("/{job_id}/applications", response_model=List[ApplicationReadWithStudent])
 async def get_job_applications(job_id: int, current_user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
@@ -100,8 +137,8 @@ async def get_job_applications(job_id: int, current_user: User = Depends(get_cur
     final_results = []
     for application, student in results:
         app_dict = application.dict()
-        app_dict["student_name"] = student.full_name
-        app_dict["student_email"] = student.email
+        app_dict["candidate_name"] = student.full_name
+        app_dict["candidate_email"] = student.email
         final_results.append(app_dict)
         
     return final_results

@@ -57,6 +57,8 @@ class JobRead(JobCreate):
     hr_id: int
     created_at: datetime
     policy_path: Optional[str] = None
+    unviewed_count: int = 0
+    total_applications: int = 0
 
 # Application Schemas
 from datetime import datetime
@@ -70,11 +72,12 @@ class ApplicationRead(BaseModel):
     ats_score: int
     ats_feedback: Optional[str]
     status: str
+    viewed: bool = False
     created_at: datetime
     
 class ApplicationReadWithStudent(ApplicationRead):
-    student_name: str
-    student_email: str
+    candidate_name: str
+    candidate_email: str
 
 class ApplicationDetail(ApplicationReadWithStudent):
     resume_path: Optional[str]

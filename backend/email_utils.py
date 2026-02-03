@@ -103,7 +103,8 @@ async def send_email_otp(to_email: str, full_name: str, otp: str):
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            start_tls=True
+            start_tls=True,
+            timeout=10  # Prevent hanging
         )
         
         print(f"✅ Email OTP sent successfully to {to_email}")
@@ -171,7 +172,8 @@ async def send_interview_scheduled_email(to_email: str, full_name: str, date_str
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            start_tls=True
+            start_tls=True,
+            timeout=10
         )
         print(f"✅ Interview email sent to {to_email}")
 
@@ -228,9 +230,149 @@ async def send_rejection_email(to_email: str, full_name: str):
             port=smtp_port,
             username=smtp_username,
             password=smtp_password,
-            start_tls=True
+            start_tls=True,
+            timeout=10
         )
         print(f"✅ Rejection email sent to {to_email}")
+
+    except Exception as e:
+        print(f"⚠️ Email sending failed: {e}")
+
+
+async def send_interview_rescheduled_email(to_email: str, full_name: str, old_date: str, old_time: str, new_date: str, new_time: str, meet_link: str):
+    """
+    Send Interview Rescheduled Email with apology
+    """
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username = os.getenv("SMTP_USERNAME")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    email_from = os.getenv("EMAIL_FROM", f"HireMind <{smtp_username}>")
+
+    if not smtp_username:
+        print(f"📧 RESCHEDULE EMAIL (Dev Mode): To {to_email} | Old: {old_date} {old_time} → New: {new_date} {new_time}")
+        return
+
+    try:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Interview Rescheduled - HireMind"
+        message["From"] = email_from
+        message["To"] = to_email
+
+        html_body = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0;">Interview Rescheduled</h1>
+              </div>
+              
+              <div style="background: white; padding: 40px; border-radius: 0 0 10px 10px;">
+                <h2 style="color: #f59e0b;">Important Update</h2>
+                <p>Hi <strong>{full_name}</strong>,</p>
+                <p>We sincerely apologize for the inconvenience, but we need to reschedule your interview.</p>
+                
+                <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 5px 0; text-decoration: line-through; color: #666;"><strong>Previous Schedule:</strong></p>
+                    <p style="margin: 5px 0; color: #666;">📅 {old_date}</p>
+                    <p style="margin: 5px 0; color: #666;">⏰ {old_time}</p>
+                </div>
+                
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>New Schedule:</strong></p>
+                    <p style="margin: 5px 0;"><strong>📅 Date:</strong> {new_date}</p>
+                    <p style="margin: 5px 0;"><strong>⏰ Time:</strong> {new_time}</p>
+                    <p style="margin: 5px 0;"><strong>📹 Link:</strong> <a href="{meet_link}" style="color: #667eea;">Join Google Meet</a></p>
+                </div>
+                
+                <p>We apologize for any inconvenience this may cause. We look forward to meeting you at the new scheduled time.</p>
+                <p>Please make sure to join 5 minutes early.</p>
+                <p>Good luck!</p>
+              </div>
+            </div>
+          </body>
+        </html>
+        """
+        
+        message.attach(MIMEText(html_body, "html"))
+
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_server,
+            port=smtp_port,
+            username=smtp_username,
+            password=smtp_password,
+            start_tls=True,
+            timeout=10
+        )
+        print(f"✅ Interview rescheduled email sent to {to_email}")
+
+    except Exception as e:
+        print(f"⚠️ Email sending failed: {e}")
+
+
+async def send_interview_cancelled_email(to_email: str, full_name: str, date_str: str, time_str: str):
+    """
+    Send Interview Cancelled Email with apology
+    """
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username = os.getenv("SMTP_USERNAME")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    email_from = os.getenv("EMAIL_FROM", f"HireMind <{smtp_username}>")
+
+    if not smtp_username:
+        print(f"📧 CANCELLATION EMAIL (Dev Mode): To {to_email} | Cancelled: {date_str} {time_str}")
+        return
+
+    try:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Interview Cancelled - HireMind"
+        message["From"] = email_from
+        message["To"] = to_email
+
+        html_body = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <div style="background: #ef4444; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0;">Interview Cancelled</h1>
+              </div>
+              
+              <div style="background: white; padding: 40px; border-radius: 0 0 10px 10px;">
+                <h2 style="color: #ef4444;">We Apologize</h2>
+                <p>Hi <strong>{full_name}</strong>,</p>
+                <p>We sincerely apologize, but we need to cancel your scheduled interview.</p>
+                
+                <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Cancelled Interview:</strong></p>
+                    <p style="margin: 5px 0;">📅 Date: {date_str}</p>
+                    <p style="margin: 5px 0;">⏰ Time: {time_str}</p>
+                </div>
+                
+                <p>We understand this may cause inconvenience and we truly apologize for any disruption to your schedule.</p>
+                <p>We will reach out to you shortly to reschedule at a more convenient time.</p>
+                <br>
+                <p>Thank you for your understanding.</p>
+                <p><strong>The HireMind Team</strong></p>
+              </div>
+            </div>
+          </body>
+        </html>
+        """
+        
+        message.attach(MIMEText(html_body, "html"))
+
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_server,
+            port=smtp_port,
+            username=smtp_username,
+            password=smtp_password,
+            start_tls=True,
+            timeout=10
+        )
+        print(f"✅ Interview cancellation email sent to {to_email}")
 
     except Exception as e:
         print(f"⚠️ Email sending failed: {e}")

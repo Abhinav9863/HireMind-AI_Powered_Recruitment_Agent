@@ -46,16 +46,32 @@ async def upload_profile_picture(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # Sanitize filename
-    safe_filename = "".join([c for c in file.filename if c.isalnum() or c in "._-"]).strip()
+    # ✅ SECURITY FIX: Validate file size (5MB max for images)
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Image too large. Maximum size is 5MB")
+    
+    # ✅ SECURITY FIX: Validate image type
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif'}
+    filename = file.filename.lower()
+    if not any(filename.endswith(ext) for ext in allowed_extensions):
+        raise HTTPException(status_code=400, detail="Only image files (jpg, png, gif) are allowed")
+    
+    # ✅ SECURITY FIX: Use basename to prevent path traversal
+    import time
+    safe_filename = os.path.basename(file.filename)
+    safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
     
     # Ensure directory exists
     os.makedirs("uploads", exist_ok=True)
     
-    file_location = f"uploads/pfp_{current_user.id}_{safe_filename}"
+    # Add timestamp to prevent overwrites
+    timestamp = int(time.time())
+    file_location = f"uploads/pfp_{current_user.id}_{timestamp}_{safe_filename}"
     
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(file.file, file_object)
+    with open(file_location, "wb") as file_object:
+        file_object.write(content)
         
     current_user.profile_picture = file_location
     session.add(current_user)
@@ -69,16 +85,32 @@ async def upload_default_resume(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # Sanitize filename
-    safe_filename = "".join([c for c in file.filename if c.isalnum() or c in "._-"]).strip()
+    # ✅ SECURITY FIX: Validate file size (10MB max for resumes)
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Resume too large. Maximum size is 10MB")
+    
+    # ✅ SECURITY FIX: Validate PDF type
+    allowed_extensions = {'.pdf'}
+    filename = file.filename.lower()
+    if not any(filename.endswith(ext) for ext in allowed_extensions):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed for resumes")
+    
+    # ✅ SECURITY FIX: Use basename to prevent path traversal
+    import time
+    safe_filename = os.path.basename(file.filename)
+    safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
     
     # Ensure directory exists
     os.makedirs("uploads", exist_ok=True)
     
-    file_location = f"uploads/resume_{current_user.id}_{safe_filename}"
+    # Add timestamp to prevent overwrites
+    timestamp = int(time.time())
+    file_location = f"uploads/resume_{current_user.id}_{timestamp}_{safe_filename}"
     
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(file.file, file_object)
+    with open(file_location, "wb") as file_object:
+        file_object.write(content)
         
     current_user.resume_path = file_location
     session.add(current_user)

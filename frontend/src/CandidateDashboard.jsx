@@ -4,7 +4,7 @@ import axios from 'axios';
 import { API_URL } from './config';
 import { LogOut, Send, Paperclip, FileText, User, Briefcase, ChevronRight, UploadCloud, CheckCircle, MapPin, DollarSign } from 'lucide-react';
 
-const StudentDashboard = () => {
+const CandidateDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'chat' | 'ats'
     const [jobs, setJobs] = useState([]);
@@ -1021,4 +1021,4 @@ const StudentDashboard = () => {
     );
 };
 
-export default StudentDashboard;
+export default CandidateDashboard;

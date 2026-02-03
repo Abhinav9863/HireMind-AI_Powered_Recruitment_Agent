@@ -107,6 +107,8 @@ def generate_technical_questions(resume_text: str, job_title: str) -> List[str]:
             "What is your approach to debugging complex asynchronous issues?"
         ]
 
+import traceback
+
 @router.post("/start", response_model=ChatResponse)
 async def start_interview(
     job_id: int = Form(...),
@@ -115,129 +117,157 @@ async def start_interview(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    if current_user.role != UserRole.STUDENT:
-        raise HTTPException(status_code=403, detail="Only students can apply")
+    try:
+        if current_user.role != UserRole.STUDENT:
+            raise HTTPException(status_code=403, detail="Only students can apply")
 
-    # 1. Read PDF
-    resume_text = ""
-    file_location = ""
-    
-    if resume:
-        # Case A: Uploading new resume
-        content = await resume.read()
-        resume_text = extract_text_from_pdf(content)
+        # 1. Read PDF
+        resume_text = ""
+        file_location = ""
         
-        # Save file
-        # Sanitize filename
-        safe_filename = "".join([c for c in resume.filename if c.isalnum() or c in "._-"]).strip()
-        file_location = f"uploads/{current_user.id}_{job_id}_{safe_filename}"
-        with open(file_location, "wb") as f:
-            f.write(content)
+        if resume:
+            # Case A: Uploading new resume
+            # ✅ SECURITY FIX: Validate file size (10MB max)
+            MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+            content = await resume.read()
+            if len(content) > MAX_FILE_SIZE:
+                raise HTTPException(status_code=400, detail="Resume too large. Maximum size is 10MB")
             
-    elif use_profile_resume and current_user.resume_path:
-        # Case B: Using Profile Resume
-        print(f"DEBUG: Checking profile resume path: {current_user.resume_path}")
-        if not os.path.exists(current_user.resume_path):
-             print(f"DEBUG: File not found at {current_user.resume_path} (CWD: {os.getcwd()})")
-             raise HTTPException(status_code=404, detail=f"Profile resume file not found on server at {current_user.resume_path}")
-             
-        # Read from existing file
-        with open(current_user.resume_path, "rb") as f:
-            content = f.read()
-        resume_text = extract_text_from_pdf(content)
-        file_location = current_user.resume_path
-        
-    else:
-        raise HTTPException(status_code=400, detail="Please upload a resume or use your profile resume.")
+            resume_text = extract_text_from_pdf(content)
+            
+            # ✅ SECURITY FIX: Validate file type
+            allowed_extensions = {'.pdf'}
+            filename = resume.filename.lower()
+            if not any(filename.endswith(ext) for ext in allowed_extensions):
+                raise HTTPException(status_code=400, detail="Only PDF files are allowed for resumes")
+            
+            # ✅ SECURITY FIX: Use basename to prevent path traversal
+            import time
+            safe_filename = os.path.basename(resume.filename)
+            safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
+            
+            if not safe_filename:
+                safe_filename = "resume.pdf"
+            
+            # Add timestamp to prevent overwrites
+            timestamp = int(time.time())
+            safe_filename = f"resume_{current_user.id}_{job_id}_{timestamp}_{safe_filename}"
+            
+            file_location = f"uploads/{safe_filename}"
+            with open(file_location, "wb") as f:
+                f.write(content)
+                
+        elif use_profile_resume and current_user.resume_path:
+            # Case B: Using Profile Resume
+            print(f"DEBUG: Checking profile resume path: {current_user.resume_path}")
+            if not os.path.exists(current_user.resume_path):
+                 print(f"DEBUG: File not found at {current_user.resume_path} (CWD: {os.getcwd()})")
+                 raise HTTPException(status_code=404, detail=f"Profile resume file not found on server at {current_user.resume_path}")
+                 
+            # Read from existing file
+            with open(current_user.resume_path, "rb") as f:
+                content = f.read()
+            resume_text = extract_text_from_pdf(content)
+            file_location = current_user.resume_path
+            
+        else:
+            raise HTTPException(status_code=400, detail="Please upload a resume or use your profile resume.")
 
-    # Validate resume text was extracted
-    if not resume_text or len(resume_text) < 50:
-        raise HTTPException(
-            status_code=400,
-            detail="Could not extract text from PDF. Please ensure the PDF is readable and not scanned/image-based."
-        )
-    
-    # 📝 Log resume details for debugging
-    print(f"\n{'='*60}")
-    print(f"📄 Resume Upload - Job #{job_id}")
-    print(f"📏 Text Length: {len(resume_text)} characters")
-    print(f"📝 Preview: {resume_text[:200]}...")
-    print(f"{'='*60}\n")
-    
-    # ✅ Validate it's actually a resume (not a ticket/receipt/invoice)
-    from utils import validate_document_is_resume
-    is_valid, validation_error = validate_document_is_resume(resume_text)
-    
-    if not is_valid:
-        print(f"❌ Document Validation Failed: {validation_error}")
-        raise HTTPException(
-            status_code=400,
-            detail=validation_error
-        )
-    
-    print(f"✅ Document validated as resume")
-
-    # 2. Get Job Details (for context)
-    result = await session.execute(select(Job).where(Job.id == job_id))
-    job = result.scalars().first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    # 🎓 EXPERIENCE REQUIREMENT CHECK
-    if job.experience_required > 0:
-        from utils import extract_years_of_experience
-        candidate_experience = extract_years_of_experience(resume_text)
-        
-        print(f"📊 Experience Check - Required: {job.experience_required} years, Candidate: {candidate_experience} years")
-        
-        if candidate_experience < job.experience_required:
-            rejection_message = (
-                f"❌ Sorry, this position requires {job.experience_required} year(s) of experience. "
-                f"Your resume shows {candidate_experience} year(s) of experience. "
-                f"Please apply to positions matching your experience level."
+        # Validate resume text was extracted
+        if not resume_text or len(resume_text) < 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract text from PDF. Please ensure the PDF is readable and not scanned/image-based."
             )
-            print(f"❌ Application rejected: Insufficient experience")
-            raise HTTPException(status_code=400, detail=rejection_message)
         
-        print(f"✅ Experience requirement met!")
+        # 📝 Log resume details for debugging
+        print(f"\n{'='*60}")
+        print(f"📄 Resume Upload - Job #{job_id}")
+        print(f"📏 Text Length: {len(resume_text)} characters")
+        print(f"📝 Preview: {resume_text[:200]}...")
+        print(f"{'='*60}\n")
+        
+        # ✅ Validate it's actually a resume (not a ticket/receipt/invoice)
+        from utils import validate_document_is_resume
+        is_valid, validation_error = validate_document_is_resume(resume_text)
+        
+        if not is_valid:
+            print(f"❌ Document Validation Failed: {validation_error}")
+            raise HTTPException(
+                status_code=400,
+                detail=validation_error
+            )
+        
+        print(f"✅ Document validated as resume")
+        
+        # 2. Get Job Details (for context)
+        result = await session.execute(select(Job).where(Job.id == job_id))
+        job = result.scalars().first()
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # 🎓 EXPERIENCE REQUIREMENT CHECK
+        if job.experience_required > 0:
+            from utils import extract_years_of_experience
+            candidate_experience = extract_years_of_experience(resume_text)
+            
+            print(f"📊 Experience Check - Required: {job.experience_required} years, Candidate: {candidate_experience} years")
+            
+            if candidate_experience < job.experience_required:
+                rejection_message = (
+                    f"❌ Sorry, this position requires {job.experience_required} year(s) of experience. "
+                    f"Your resume shows {candidate_experience} year(s) of experience. "
+                    f"Please apply to positions matching your experience level."
+                )
+                print(f"❌ Application rejected: Insufficient experience")
+                raise HTTPException(status_code=400, detail=rejection_message)
+            
+            print(f"✅ Experience requirement met!")
 
-    # 3. Analyze Resume (ATS) & Generate Questions
-    print(f"🔍 Starting ATS analysis for: {job.title}")
-    print(f"🏢 Company: {job.company}")
-    
-    # Pass both job title and description for accurate ATS analysis
-    ats_result = analyze_resume_with_llm(resume_text, job.title, job.description)
-    
-    ats_score = ats_result.get("score", 0)
-    print(f"📊 ATS Score: {ats_score}%")
-    print(f"💡 Feedback: {ats_result.get('feedback', 'N/A')[:150]}...")
-    
-    questions = generate_technical_questions(resume_text, job.title)
+        # 3. Analyze Resume (ATS) & Generate Questions
+        print(f"🔍 Starting ATS analysis for: {job.title}")
+        print(f"🏢 Company: {job.company}")
 
-    new_app = Application(
-        job_id=job_id,
-        student_id=current_user.id,
-        resume_path=file_location,
-        resume_text=resume_text,
-        generated_questions=questions,
-        interview_step="name", # First step
-        status="Interviewing",
-        candidate_info={},
-        chat_history=[],
-        ats_score=ats_result.get("score", 0),
-        ats_feedback=ats_result.get("feedback", "Pending analysis."),
-        ats_report=ats_result
-    )
-    
-    session.add(new_app)
-    await session.commit()
-    await session.refresh(new_app)
+        # Pass both job title and description for accurate ATS analysis
+        ats_result = analyze_resume_with_llm(resume_text, job.title, job.description)
+        
+        ats_score = ats_result.get("score", 0)
+        print(f"📊 ATS Score: {ats_score}%")
+        print(f"💡 Feedback: {ats_result.get('feedback', 'N/A')[:150]}...")
+        
+        questions = generate_technical_questions(resume_text, job.title)
 
-    return ChatResponse(
-        reply="Hello! I've received your resume. To start the interview, may I please have your full name?",
-        application_id=new_app.id,
-        ats_score=new_app.ats_score  # Include ATS score in response
-    )
+        new_app = Application(
+            job_id=job_id,
+            student_id=current_user.id,
+            resume_path=file_location,
+            resume_text=resume_text,
+            generated_questions=questions,
+            interview_step="name", # First step
+            status="Interviewing",
+            candidate_info={},
+            chat_history=[],
+            ats_score=ats_result.get("score", 0),
+            ats_feedback=ats_result.get("feedback", "Pending analysis."),
+            ats_report=ats_result
+        )
+        
+        session.add(new_app)
+        await session.commit()
+        await session.refresh(new_app)
+
+        return ChatResponse(
+            reply="Hello! I've received your resume. To start the interview, may I please have your full name?",
+            application_id=new_app.id,
+            ats_score=new_app.ats_score  # Include ATS score in response
+        )
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR in start_interview: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Processing Error: {str(e)}")
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_interview(

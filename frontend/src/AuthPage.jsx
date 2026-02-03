@@ -173,7 +173,7 @@ const AuthPage = () => {
         }
     };
 
-    const title = isHrMode ? 'Recruiter' : 'Student';
+    const title = isHrMode ? 'Recruiter' : 'Candidate';
     const overlayClass = isHrMode ? 'hr-mode' : '';
 
     return (
@@ -219,7 +219,7 @@ const AuthPage = () => {
                         </button>
 
                         <div onClick={handleModeSwitch} className="mt-6 text-xs text-gray-500 cursor-pointer hover:text-black flex items-center gap-1 transition-colors">
-                            {isHrMode ? <><GraduationCap size={14} /> Not a Recruiter? Join as Student</> : <><Briefcase size={14} /> Are you hiring? Join as Recruiter</>}
+                            {isHrMode ? <><GraduationCap size={14} /> Not a Recruiter? Join as Candidate</> : <><Briefcase size={14} /> Are you hiring? Join as Recruiter</>}
                         </div>
                     </form>
                 </div>
@@ -250,7 +250,7 @@ const AuthPage = () => {
                         </button>
 
                         <div onClick={handleModeSwitch} className="mt-6 text-xs text-gray-500 cursor-pointer hover:text-black flex items-center gap-1 transition-colors">
-                            {isHrMode ? <><GraduationCap size={14} /> Not a Recruiter? Student Login</> : <><Briefcase size={14} /> Are you hiring? Recruiter Login</>}
+                            {isHrMode ? <><GraduationCap size={14} /> Not a Recruiter? Candidate Login</> : <><Briefcase size={14} /> Are you hiring? Recruiter Login</>}
                         </div>
                     </form>
                 </div>

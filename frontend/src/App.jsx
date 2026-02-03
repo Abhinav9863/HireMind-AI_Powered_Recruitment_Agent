@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthPage from './AuthPage';
-import StudentDashboard from './StudentDashboard';
+import CandidateDashboard from './CandidateDashboard';
 import HrDashboard from './HrDashboard';
 import ForgotPassword from './ForgotPassword';
 import ResetPassword from './ResetPassword';
@@ -31,7 +31,7 @@ function App() {
                     path="/student-dashboard"
                     element={
                         <PrivateRoute allowedRole="student">
-                            <StudentDashboard />
+                            <CandidateDashboard />
                         </PrivateRoute>
                     }
                 />

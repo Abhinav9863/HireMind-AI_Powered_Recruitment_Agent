@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
+groq
 sqlmodel
 asyncpg
 psycopg2-binary

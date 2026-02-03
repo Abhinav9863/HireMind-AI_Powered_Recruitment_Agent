@@ -54,6 +54,7 @@ ALLOWED_ORIGINS = _os_cors.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Briefcase, Send, FileText, CheckCircle, X } from 'lucide-react';
+import { LogOut, Briefcase, Send, FileText, CheckCircle, X, User } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, isOpen, onClose }) => {
     return (
@@ -63,12 +63,21 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                         >
                             <CheckCircle size={18} /> My Applications
                         </button>
+                        <button
+                            onClick={() => { setActiveTab('profile'); onClose && onClose(); }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'profile' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                        >
+                            <User size={18} /> My Profile
+                        </button>
                     </nav>
                 </div>
 
                 <div className="px-8 mb-8">
                     <h3 className="text-xl font-bold mb-6">Candidate<br />Dashboard</h3>
-                    <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm border border-white/5">
+                    <div
+                        onClick={() => { setActiveTab('profile'); onClose && onClose(); }}
+                        className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm border border-white/5 cursor-pointer hover:bg-white/20 transition-colors"
+                    >
                         <div className="mb-4">
                             <div className="flex justify-between text-xs mb-2">
                                 <span className="text-indigo-200">Profile Completion</span>

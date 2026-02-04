@@ -219,6 +219,18 @@ const AuthPage = () => {
                             {loading ? 'Creating...' : 'Sign Up'}
                         </button>
 
+                        {/* Mobile Toggle Link */}
+                        <div className="mt-4 md:hidden">
+                            <span className="text-xs text-gray-500">Already have an account? </span>
+                            <button
+                                type="button"
+                                onClick={() => { setIsSignUp(false); setError(''); }}
+                                className="text-xs font-bold text-indigo-600 hover:underline"
+                            >
+                                Sign In
+                            </button>
+                        </div>
+
                         <div onClick={handleModeSwitch} className="mt-6 text-xs text-gray-500 cursor-pointer hover:text-black flex items-center gap-1 transition-colors">
                             {isHrMode ? <><GraduationCap size={14} /> Not a Recruiter? Join as Candidate</> : <><Briefcase size={14} /> Are you hiring? Join as Recruiter</>}
                         </div>
@@ -249,6 +261,18 @@ const AuthPage = () => {
                             {loading && <Loader2 className="animate-spin" size={16} />}
                             {loading ? 'Signing In...' : 'Sign In'}
                         </button>
+
+                        {/* Mobile Toggle Link */}
+                        <div className="mt-4 md:hidden">
+                            <span className="text-xs text-gray-500">Don't have an account? </span>
+                            <button
+                                type="button"
+                                onClick={() => { setIsSignUp(true); setError(''); }}
+                                className="text-xs font-bold text-indigo-600 hover:underline"
+                            >
+                                Sign Up
+                            </button>
+                        </div>
 
                         <div onClick={handleModeSwitch} className="mt-6 text-xs text-gray-500 cursor-pointer hover:text-black flex items-center gap-1 transition-colors">
                             {isHrMode ? <><GraduationCap size={14} /> Not a Recruiter? Candidate Login</> : <><Briefcase size={14} /> Are you hiring? Recruiter Login</>}

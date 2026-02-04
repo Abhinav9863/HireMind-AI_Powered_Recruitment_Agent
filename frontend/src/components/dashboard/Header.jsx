@@ -2,7 +2,7 @@ import React from 'react';
 import { Search, User, ChevronRight, ArrowLeft, Menu } from 'lucide-react';
 import { API_URL } from '../../config';
 
-const Header = ({ activeTab, user, toggleSidebar }) => {
+const Header = ({ activeTab, user, toggleSidebar, setActiveTab }) => {
     return (
         <header className="h-20 bg-white flex items-center justify-between px-8 shrink-0 relative z-20 shadow-sm">
             <div className="flex items-center gap-4">
@@ -19,6 +19,8 @@ const Header = ({ activeTab, user, toggleSidebar }) => {
                         <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search for jobs, skills, or companies..."
                             className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder-gray-400"
                         />
@@ -31,7 +33,10 @@ const Header = ({ activeTab, user, toggleSidebar }) => {
             </div>
 
             <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
+                <div
+                    className="flex items-center gap-3 pl-6 border-l border-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setActiveTab && setActiveTab('profile')}
+                >
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-600">
                         {user?.profile_picture ? (
                             <img

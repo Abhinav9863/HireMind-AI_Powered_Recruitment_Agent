@@ -20,10 +20,10 @@ services:
         value: 1
       - key: GROQ_API_KEY
         sync: false # User must provide manually in Dashboard
-      - key: SMTP_USER
-        sync: false # User must provide manually
-      - key: SMTP_PASSWORD
-        sync: false # User must provide manually
+      - key: RESEND_API_KEY
+        sync: false # Get from https://resend.com/api-keys
+      - key: EMAIL_FROM
+        value: "HireMind <onboarding@resend.dev>"
 
 databases:
   - name: hiremind-db

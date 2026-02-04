@@ -33,7 +33,7 @@ const Header = ({ activeTab, user, toggleSidebar }) => {
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-600">
-                        {user.profile_picture ? (
+                        {user?.profile_picture ? (
                             <img
                                 src={user.profile_picture.startsWith('http') ? user.profile_picture : `${API_URL}/${user.profile_picture}`}
                                 alt="Profile"
@@ -45,7 +45,7 @@ const Header = ({ activeTab, user, toggleSidebar }) => {
                         )}
                     </div>
                     <div className="text-sm hidden md:block">
-                        <p className="font-bold text-gray-900 leading-none mb-1">{user.full_name}</p>
+                        <p className="font-bold text-gray-900 leading-none mb-1">{user?.full_name || 'Candidate'}</p>
                         <div className="flex items-center text-gray-400 text-xs">
                             Candidate
                         </div>

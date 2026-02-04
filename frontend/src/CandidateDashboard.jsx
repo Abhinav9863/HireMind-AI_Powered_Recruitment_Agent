@@ -23,6 +23,7 @@ const CandidateDashboard = () => {
     const [hasResume, setHasResume] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // ATS State
     const [atsResult, setAtsResult] = useState(null);
@@ -450,10 +451,12 @@ const CandidateDashboard = () => {
                 selectedJob={selectedJob}
                 stats={stats}
                 handleLogout={handleLogout}
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
             />
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden relative font-sans">
+            <main className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden relative font-sans w-full">
 
                 {/* Header */}
                 <Header
@@ -461,7 +464,8 @@ const CandidateDashboard = () => {
                     setSearchQuery={setSearchQuery}
                     setActiveTab={setActiveTab}
                     activeTab={activeTab}
-                    profile={profile}
+                    user={profile}
+                    toggleSidebar={() => setIsMobileMenuOpen(true)}
                 />
 
                 {/* Content Area */}

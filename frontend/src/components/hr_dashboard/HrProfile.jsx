@@ -199,7 +199,7 @@ const HrProfile = ({ user, setUser }) => {
                             Company Policy Document
                         </h3>
 
-                        <div className="flex items-center gap-6 p-6 bg-gray-50 rounded-xl border border-dashed border-gray-300 hover:border-indigo-400 transition-colors">
+                        <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-gray-50 rounded-xl border border-dashed border-gray-300 hover:border-indigo-400 transition-colors">
                             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-red-500 shadow-sm">
                                 <FileText size={24} />
                             </div>

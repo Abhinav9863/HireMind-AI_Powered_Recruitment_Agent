@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, User, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Search, User, ChevronRight, ArrowLeft, Menu } from 'lucide-react';
 import { API_URL } from '../../config';
 
 const HrHeader = ({
@@ -8,7 +8,8 @@ const HrHeader = ({
     handleBackToJobs,
     searchQuery,
     setSearchQuery,
-    user
+    user,
+    toggleSidebar
 }) => {
 
     const getTitle = () => {
@@ -22,6 +23,14 @@ const HrHeader = ({
         <header className="h-20 bg-white flex items-center justify-between px-8 shrink-0 z-20 shadow-sm border-b border-gray-100">
             {/* Title or Back Button */}
             <div className="flex-1 max-w-2xl flex items-center gap-4">
+                {/* Mobile Menu Button */}
+                <button
+                    onClick={toggleSidebar}
+                    className="p-2 -ml-2 text-gray-600 hover:text-indigo-600 md:hidden rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                    <Menu size={24} />
+                </button>
+
                 {selectedJob ? (
                     <button
                         onClick={handleBackToJobs}

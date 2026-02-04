@@ -19,6 +19,7 @@ const HrDashboard = () => {
     const [selectedJob, setSelectedJob] = useState(null);
     const [applications, setApplications] = useState([]);
     const [user, setUser] = useState(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Detailed View State
     const [selectedAppId, setSelectedAppId] = useState(null);
@@ -504,10 +505,12 @@ const HrDashboard = () => {
                     setSearchQuery('');
                 }}
                 handleLogout={handleLogout}
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
             />
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col relative h-full overflow-hidden">
+            <main className="flex-1 flex flex-col relative h-full overflow-hidden w-full">
                 <HrHeader
                     activeTab={activeTab}
                     selectedJob={selectedJob}
@@ -515,6 +518,7 @@ const HrDashboard = () => {
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     user={user}
+                    toggleSidebar={() => setIsMobileMenuOpen(true)}
                 />
 
                 <div className="flex-1 overflow-hidden relative flex">

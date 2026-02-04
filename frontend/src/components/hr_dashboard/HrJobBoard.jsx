@@ -50,7 +50,8 @@ const HrJobBoard = ({
         }
 
         return (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredJobs.map((job) => (
                     <div key={job.id}
                         onClick={() => handleViewApplicants(job)}
@@ -116,8 +117,8 @@ const HrJobBoard = ({
                 {/* Header for Applicant List is handled by HrHeader now */}
 
                 <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                    {/* Table Header */}
-                    <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    {/* Table Header - Hidden on Mobile */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         <div className="col-span-3">Candidate</div>
                         <div className="col-span-3">Status</div>
                         <div className="col-span-2 text-center">ATS Score</div>
@@ -135,10 +136,11 @@ const HrJobBoard = ({
                             applications.map((app) => (
                                 <div
                                     key={app.id}
-                                    className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-indigo-50/30 transition-colors cursor-pointer group ${!app.viewed ? 'bg-purple-50/30' : ''}`}
+                                    className={`grid grid-cols-2 md:grid-cols-12 gap-4 p-4 items-center hover:bg-indigo-50/30 transition-colors cursor-pointer group ${!app.viewed ? 'bg-purple-50/30' : ''}`}
                                     onClick={() => fetchApplicationDetail(app.id)}
                                 >
-                                    <div className="col-span-3">
+                                    {/* Candidate Name & Email */}
+                                    <div className="col-span-2 md:col-span-3">
                                         <div className="flex items-center gap-2">
                                             <h4 className={`font-bold text-gray-900 ${!app.viewed ? 'text-indigo-900' : ''}`}>{app.candidate_name}</h4>
                                             {!app.viewed && (
@@ -147,7 +149,9 @@ const HrJobBoard = ({
                                         </div>
                                         <p className="text-xs text-gray-500 truncate">{app.candidate_email}</p>
                                     </div>
-                                    <div className="col-span-3">
+
+                                    {/* Status */}
+                                    <div className="col-span-1 md:col-span-3">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-green-100 text-green-700 border-green-200' :
                                             app.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-100' :
                                                 'bg-blue-50 text-blue-600 border-blue-100'
@@ -155,7 +159,9 @@ const HrJobBoard = ({
                                             {app.status}
                                         </span>
                                     </div>
-                                    <div className="col-span-2 text-center">
+
+                                    {/* ATS Score */}
+                                    <div className="col-span-1 md:col-span-2 flex md:justify-center">
                                         <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold ${app.ats_score >= 80 ? 'bg-green-100 text-green-700' :
                                             app.ats_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
                                                 'bg-red-100 text-red-700'
@@ -163,12 +169,17 @@ const HrJobBoard = ({
                                             {app.ats_score}%
                                         </div>
                                     </div>
-                                    <div className="col-span-2 text-center text-sm text-gray-600">
+
+                                    {/* Experience */}
+                                    <div className="col-span-1 md:col-span-2 md:text-center text-sm text-gray-600">
+                                        <span className="md:hidden font-bold text-gray-400 text-xs mr-2">Exp:</span>
                                         {app.experience_years > 0 ? `${app.experience_years} Yrs` : 'Fresher'}
                                     </div>
-                                    <div className="col-span-2 text-right">
-                                        <span className="text-indigo-600 hover:text-indigo-800 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                            View Details
+
+                                    {/* Action */}
+                                    <div className="col-span-1 md:col-span-2 text-right">
+                                        <span className="text-indigo-600 hover:text-indigo-800 text-xs font-bold md:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end gap-1">
+                                            View <ChevronRight size={14} />
                                         </span>
                                     </div>
                                 </div>

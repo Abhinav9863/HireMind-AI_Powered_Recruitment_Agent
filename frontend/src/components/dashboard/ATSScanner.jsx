@@ -147,34 +147,58 @@ const ATSScanner = ({
                 <div className="border-t border-gray-100 pt-8">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Past Analysis History</h3>
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <table className="w-full text-sm text-left text-gray-500">
-                            <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
-                                <tr>
-                                    <th className="px-6 py-3">Job Title</th>
-                                    <th className="px-6 py-3">Score</th>
-                                    <th className="px-6 py-3">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {atsHistory.length === 0 ? (
+                        {/* Desktop Table */}
+                        <div className="hidden md:block">
+                            <table className="w-full text-sm text-left text-gray-500">
+                                <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
                                     <tr>
-                                        <td colSpan="3" className="px-6 py-4 text-center">No history found.</td>
+                                        <th className="px-6 py-3">Job Title</th>
+                                        <th className="px-6 py-3">Score</th>
+                                        <th className="px-6 py-3">Date</th>
                                     </tr>
-                                ) : (
-                                    atsHistory.map((item) => (
-                                        <tr key={item.id} className="border-b hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-medium text-gray-900">{item.job_title}</td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.score > 70 ? 'bg-green-100 text-green-700' : item.score > 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                                                    {item.score}%
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">{new Date(item.created_at).toLocaleDateString()}</td>
+                                </thead>
+                                <tbody>
+                                    {atsHistory.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="3" className="px-6 py-4 text-center">No history found.</td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ) : (
+                                        atsHistory.map((item) => (
+                                            <tr key={item.id} className="border-b hover:bg-gray-50">
+                                                <td className="px-6 py-4 font-medium text-gray-900">{item.job_title}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.score > 70 ? 'bg-green-100 text-green-700' : item.score > 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {item.score}%
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">{new Date(item.created_at).toLocaleDateString()}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Card List */}
+                        <div className="md:hidden">
+                            {atsHistory.length === 0 ? (
+                                <div className="p-8 text-center text-gray-400">No history found.</div>
+                            ) : (
+                                <div className="divide-y divide-gray-100">
+                                    {atsHistory.map((item) => (
+                                        <div key={item.id} className="p-4 flex justify-between items-center">
+                                            <div>
+                                                <h4 className="font-bold text-gray-900 text-sm">{item.job_title}</h4>
+                                                <p className="text-xs text-gray-500">{new Date(item.created_at).toLocaleDateString()}</p>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.score > 70 ? 'bg-green-100 text-green-700' : item.score > 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                                {item.score}%
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

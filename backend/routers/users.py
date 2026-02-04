@@ -52,14 +52,17 @@ async def upload_profile_picture(
     
     # ✅ SECURITY FIX: Validate image type
     allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif'}
-    filename = file.filename.lower()
+    filename = file.filename.lower() if file.filename else "photo.jpg"
     if not any(filename.endswith(ext) for ext in allowed_extensions):
         raise HTTPException(status_code=400, detail="Only image files (jpg, png, gif) are allowed")
     
     # ✅ SECURITY FIX: Use basename to prevent path traversal
     import time
-    safe_filename = os.path.basename(file.filename)
+    safe_filename = os.path.basename(file.filename) if file.filename else "photo.jpg"
     safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
+    
+    if not safe_filename:
+        safe_filename = "photo.jpg"
     
     # Ensure directory exists
     os.makedirs("uploads", exist_ok=True)
@@ -68,8 +71,12 @@ async def upload_profile_picture(
     timestamp = int(time.time())
     file_location = f"uploads/pfp_{current_user.id}_{timestamp}_{safe_filename}"
     
-    with open(file_location, "wb") as file_object:
-        file_object.write(content)
+    try:
+        with open(file_location, "wb") as file_object:
+            file_object.write(content)
+    except Exception as e:
+        print(f"File write error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
         
     current_user.profile_picture = file_location
     session.add(current_user)
@@ -91,14 +98,17 @@ async def upload_default_resume(
     
     # ✅ SECURITY FIX: Validate PDF type
     allowed_extensions = {'.pdf'}
-    filename = file.filename.lower()
+    filename = file.filename.lower() if file.filename else "resume.pdf"
     if not any(filename.endswith(ext) for ext in allowed_extensions):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed for resumes")
     
     # ✅ SECURITY FIX: Use basename to prevent path traversal
     import time
-    safe_filename = os.path.basename(file.filename)
+    safe_filename = os.path.basename(file.filename) if file.filename else "resume.pdf"
     safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
+    
+    if not safe_filename:
+        safe_filename = "resume.pdf"
     
     # Ensure directory exists
     os.makedirs("uploads", exist_ok=True)
@@ -107,8 +117,12 @@ async def upload_default_resume(
     timestamp = int(time.time())
     file_location = f"uploads/resume_{current_user.id}_{timestamp}_{safe_filename}"
     
-    with open(file_location, "wb") as file_object:
-        file_object.write(content)
+    try:
+        with open(file_location, "wb") as file_object:
+            file_object.write(content)
+    except Exception as e:
+        print(f"File write error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
         
     current_user.resume_path = file_location
     session.add(current_user)
@@ -129,21 +143,28 @@ async def upload_company_policy(
         raise HTTPException(status_code=400, detail="Policy file too large. Maximum size is 10MB")
     
     # Validate PDF
-    filename = file.filename.lower()
+    filename = file.filename.lower() if file.filename else "policy.pdf"
     if not filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed for company policies")
     
     import time
-    safe_filename = os.path.basename(file.filename)
+    safe_filename = os.path.basename(file.filename) if file.filename else "policy.pdf"
     safe_filename = "".join([c for c in safe_filename if c.isalnum() or c in "._-"]).strip()
+    
+    if not safe_filename:
+        safe_filename = "policy.pdf"
     
     os.makedirs("uploads", exist_ok=True)
     
     timestamp = int(time.time())
     file_location = f"uploads/policy_{current_user.id}_{timestamp}_{safe_filename}"
     
-    with open(file_location, "wb") as file_object:
-        file_object.write(content)
+    try:
+        with open(file_location, "wb") as file_object:
+            file_object.write(content)
+    except Exception as e:
+        print(f"File write error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
         
     current_user.company_policy_path = file_location
     session.add(current_user)

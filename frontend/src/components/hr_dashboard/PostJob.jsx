@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, DollarSign, X } from 'lucide-react';
+import { MapPin, DollarSign, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 const PostJob = ({
     formData,
@@ -203,24 +203,53 @@ const PostJob = ({
                     <label className="block text-sm font-bold text-gray-700 mb-3 block">Company Policy Document</label>
 
                     {/* Option 1: Use Profile Policy */}
-                    {hasProfilePolicy && (
-                        <div className="flex items-center gap-3 mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-                            <input
-                                type="checkbox"
-                                name="use_profile_policy"
-                                id="use_profile_policy"
-                                checked={formData.use_profile_policy || false}
-                                onChange={(e) => handleInputChange({ target: { name: 'use_profile_policy', value: e.target.checked } })}
-                                className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
-                            />
-                            <label htmlFor="use_profile_policy" className="text-sm text-gray-700 font-medium cursor-pointer select-none">
-                                Use existing Company Policy from my Profile
-                                <span className="block text-xs text-gray-500 font-normal mt-0.5">
-                                    (Currently active: <span className="italic">{currentUser.company_policy_path.split('/').pop()}</span>)
-                                </span>
-                            </label>
+                    {/* Option 1: Use Profile Policy */}
+                    <div className={`transition-all duration-300 ${!hasProfilePolicy ? 'opacity-80' : ''}`}>
+                        <div className={`flex items-start gap-3 mb-4 p-4 rounded-xl border transition-all ${formData.use_profile_policy
+                            ? 'bg-indigo-50 border-indigo-200 shadow-sm'
+                            : hasProfilePolicy
+                                ? 'bg-white border-gray-200 hover:border-indigo-200'
+                                : 'bg-gray-50 border-gray-200 border-dashed'
+                            }`}>
+                            <div className="mt-0.5">
+                                <input
+                                    type="checkbox"
+                                    name="use_profile_policy"
+                                    id="use_profile_policy"
+                                    disabled={!hasProfilePolicy}
+                                    checked={formData.use_profile_policy || false}
+                                    onChange={(e) => handleInputChange({ target: { name: 'use_profile_policy', value: e.target.checked } })}
+                                    className={`w-5 h-5 rounded focus:ring-indigo-500 border-gray-300 transition-colors ${!hasProfilePolicy ? 'cursor-not-allowed text-gray-400 bg-gray-100' : 'text-indigo-600 cursor-pointer'}`}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="use_profile_policy" className={`text-sm font-medium block ${!hasProfilePolicy ? 'text-gray-500 cursor-not-allowed' : 'text-gray-700 cursor-pointer'}`}>
+                                    Use existing Company Policy from my Profile
+                                </label>
+
+                                {hasProfilePolicy ? (
+                                    <span className="block text-xs text-indigo-600 mt-1 font-medium flex items-center gap-1">
+                                        <CheckCircle size={12} />
+                                        <span>Active: <span className="underline">{currentUser.company_policy_path.split('/').pop()}</span></span>
+                                    </span>
+                                ) : (
+                                    <div className="mt-1.5 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 inline-block">
+                                        <AlertCircle size={14} />
+                                        <span>
+                                            No policy found in profile.
+                                            <button
+                                                type="button"
+                                                onClick={() => document.querySelector('[data-tab="profile"]')?.click() || (window.location.hash = 'profile')}
+                                                className="ml-1 font-bold underline hover:text-amber-800"
+                                            >
+                                                Go to Profile
+                                            </button> to upload one.
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </div>
 
                     {/* Option 2: Upload New File */}
                     <div className={`transition-opacity ${formData.use_profile_policy ? 'opacity-40 pointer-events-none grayscale' : 'opacity-100'}`}>

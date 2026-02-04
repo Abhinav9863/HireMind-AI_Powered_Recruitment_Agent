@@ -44,7 +44,8 @@ const HrProfile = ({ user, setUser }) => {
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
         } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: 'Failed to update profile.' });
+            const errorMsg = error.response?.data?.detail || 'Failed to update profile.';
+            setMessage({ type: 'error', text: errorMsg });
         } finally {
             setLoading(false);
         }
@@ -69,7 +70,8 @@ const HrProfile = ({ user, setUser }) => {
             setMessage({ type: 'success', text: `${type === 'photo' ? 'Photo' : 'Policy'} uploaded successfully!` });
         } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: `Failed to upload ${type}.` });
+            const errorMsg = error.response?.data?.detail || `Failed to upload ${type}.`;
+            setMessage({ type: 'error', text: errorMsg });
         } finally {
             setLoading(false);
         }

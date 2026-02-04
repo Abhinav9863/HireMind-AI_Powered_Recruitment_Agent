@@ -141,8 +141,6 @@ async def update_slot(
         raise HTTPException(status_code=400, detail="Slot occupied: This time range overlaps with an existing slot.")
 
     # Store old times for email notification
-    old_start = slot.start_time
-    old_end = slot.end_time
     was_booked = slot.status == "BOOKED"
     candidate_id = slot.candidate_id
 
@@ -157,24 +155,39 @@ async def update_slot(
     # If slot was booked, send reschedule email to candidate
     if was_booked and candidate_id:
         from email_utils import send_interview_rescheduled_email
+        from models import Application, Job # Import here to avoid circular
         
         # Get candidate info
         candidate_result = await session.execute(select(User).where(User.id == candidate_id))
         candidate = candidate_result.scalars().first()
 
+        # Attempt to find Job Title (heuristic: find latest application with this HR)
+        job_title = "Scheduled Interview"
+        try:
+             # Find applications where candidate = candidate_id AND job.hr_id = current_user.id
+             app_stmt = (
+                 select(Application, Job)
+                 .join(Job, Application.job_id == Job.id)
+                 .where(Application.student_id == candidate_id)
+                 .where(Job.hr_id == current_user.id)
+                 .order_by(Application.created_at.desc())
+             )
+             app_res = await session.execute(app_stmt)
+             app_row = app_res.first()
+             if app_row:
+                 _, job = app_row
+                 job_title = job.title
+        except Exception as e:
+             print(f"Error fetching job title for email: {e}")
+
         if candidate:
-            old_date_str = old_start.strftime("%B %d, %Y")
-            old_time_str = old_start.strftime("%I:%M %p")
-            new_date_str = slot.start_time.strftime("%B %d, %Y")
-            new_time_str = slot.start_time.strftime("%I:%M %p")
+            new_datetime_str = f"{slot.start_time.strftime('%B %d, %Y')} at {slot.start_time.strftime('%I:%M %p')}"
 
             await send_interview_rescheduled_email(
                 candidate.email,
                 candidate.full_name,
-                old_date_str,
-                old_time_str,
-                new_date_str,
-                new_time_str,
+                job_title,
+                new_datetime_str,
                 slot.meet_link
             )
 
@@ -213,20 +226,35 @@ async def delete_slot(
     # If slot was booked, send cancellation email to candidate
     if slot.status == "BOOKED" and slot.candidate_id:
         from email_utils import send_interview_cancelled_email
+        from models import Application, Job
         
         # Get candidate info
         candidate_result = await session.execute(select(User).where(User.id == slot.candidate_id))
         candidate = candidate_result.scalars().first()
+        
+        # Attempt to find Job Title
+        job_title = "Scheduled Interview"
+        try:
+             app_stmt = (
+                 select(Application, Job)
+                 .join(Job, Application.job_id == Job.id)
+                 .where(Application.student_id == slot.candidate_id)
+                 .where(Job.hr_id == current_user.id)
+                 .order_by(Application.created_at.desc())
+             )
+             app_res = await session.execute(app_stmt)
+             app_row = app_res.first()
+             if app_row:
+                 _, job = app_row
+                 job_title = job.title
+        except Exception as e:
+             print(f"Error fetching job title for email: {e}")
 
         if candidate:
-            date_str = slot.start_time.strftime("%B %d, %Y")
-            time_str = slot.start_time.strftime("%I:%M %p")
-
             await send_interview_cancelled_email(
                 candidate.email,
                 candidate.full_name,
-                date_str,
-                time_str
+                job_title
             )
 
     # Delete the slot

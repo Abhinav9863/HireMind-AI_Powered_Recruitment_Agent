@@ -12,6 +12,7 @@ import JobApplications from './components/dashboard/JobApplications';
 import ATSScanner from './components/dashboard/ATSScanner';
 import Profile from './components/dashboard/Profile';
 import InterviewChat from './components/dashboard/InterviewChat';
+import Settings from './components/dashboard/Settings';
 
 const CandidateDashboard = () => {
     const navigate = useNavigate();
@@ -537,6 +538,13 @@ const CandidateDashboard = () => {
                             profile={profile}
                             handleUseProfileResume={handleUseProfileResume}
                         />
+                    )}
+
+                    {/* SETTINGS VIEW */}
+                    {activeTab === 'settings' && (
+                        <div className="h-full overflow-y-auto w-full">
+                            <Settings user={profile} handleLogout={handleLogout} />
+                        </div>
                     )}
                 </div >
             </main >

@@ -157,12 +157,15 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
+    print(f"🔐 Attempting password change for user: {current_user.email}")
     # Verify old password
     if not verify_password(password_data.old_password, current_user.hashed_password):
+        print(f"❌ Password change failed: Incorrect old password for {current_user.email}")
         raise HTTPException(status_code=400, detail="Incorrect current password")
     
     # Check new password complexity (reusing logic from signup would be best, but for now simple check)
     if len(password_data.new_password) < 8:
+         print(f"❌ Password change failed: New password too short for {current_user.email}")
          raise HTTPException(status_code=400, detail="New password must be at least 8 characters long")
     
     # Update password
@@ -170,6 +173,7 @@ async def change_password(
     session.add(current_user)
     await session.commit()
     
+    print(f"✅ Password changed successfully for {current_user.email}")
     return {"message": "Password updated successfully"}
 
 @router.delete("/me")
@@ -177,10 +181,55 @@ async def delete_account(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # Depending on DB relationships, might need to manually delete related items if no cascade
-    # Assuming SQLAlchemy cascade is set up or we accept orphan records for now
+    print(f"⚠️ Attempting DELETE ACCOUNT for user: {current_user.email} (ID: {current_user.id})")
+    from sqlalchemy import delete, select
+    from models import Job, Application, ATSAnalysis, InterviewSlot  # Import models here to avoid circular imports
     
-    await session.delete(current_user)
-    await session.commit()
-    
-    return {"message": "Account deleted successfully"}
+    try:
+        # 1. Delete ATS Analysis History
+        await session.execute(delete(ATSAnalysis).where(ATSAnalysis.user_id == current_user.id))
+
+        if current_user.role == "hr":
+            # 2. HR Specific Cleanup
+            
+            # a. Delete Interview Slots created by HR
+            await session.execute(delete(InterviewSlot).where(InterviewSlot.hr_id == current_user.id))
+            
+            # b. Delete Jobs created by HR (and their applications)
+            # First find all jobs by this HR
+            result = await session.execute(select(Job).where(Job.hr_id == current_user.id))
+            hr_jobs = result.scalars().all()
+            hr_job_ids = [job.id for job in hr_jobs]
+            
+            if hr_job_ids:
+                # Delete applications for these jobs
+                await session.execute(delete(Application).where(Application.job_id.in_(hr_job_ids)))
+                # Delete the jobs
+                await session.execute(delete(Job).where(Job.id.in_(hr_job_ids)))
+                
+        else:
+            # 3. Candidate Specific Cleanup
+            
+            # a. Delete Applications made by Candidate
+            await session.execute(delete(Application).where(Application.student_id == current_user.id))
+            
+            # b. Unbook Interview Slots (Set candidate_id to None and status to AVAILABLE)
+            # Find slots where this candidate is booked
+            result = await session.execute(select(InterviewSlot).where(InterviewSlot.candidate_id == current_user.id))
+            booked_slots = result.scalars().all()
+            for slot in booked_slots:
+                slot.candidate_id = None
+                slot.status = "AVAILABLE"
+                session.add(slot)
+                
+        # 4. Finally Delete the User
+        await session.delete(current_user)
+        await session.commit()
+        
+        print(f"✅ Account deleted successfully: {current_user.email}")
+        return {"message": "Account deleted successfully"}
+        
+    except Exception as e:
+        print(f"❌ DELETE ACCOUNT FAILED for {current_user.email}: {str(e)}")
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")

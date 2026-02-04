@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Lock, Trash2, AlertTriangle, Check, X, Shield, Key } from 'lucide-react';
-import { API_URL } from './config';
+import { API_URL } from '../../config';
 
-const Settings = ({ user }) => {
+const Settings = ({ user, handleLogout }) => {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,6 +45,7 @@ const Settings = ({ user }) => {
             setNewPassword('');
             setConfirmPassword('');
         } catch (err) {
+            console.error(err);
             setError(err.response?.data?.detail || "Failed to update password");
         } finally {
             setLoading(false);
@@ -59,11 +60,15 @@ const Settings = ({ user }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            // Logout and redirect
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            // Use passed handleLogout if available, otherwise manual cleanup
+            if (handleLogout) {
+                handleLogout();
+            } else {
+                localStorage.clear();
+                window.location.href = '/';
+            }
         } catch (err) {
+            console.error("Delete Account Error:", err);
             setError(err.response?.data?.detail || "Failed to delete account");
             setShowDeleteModal(false);
         } finally {

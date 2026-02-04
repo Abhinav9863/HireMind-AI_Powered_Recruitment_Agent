@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Briefcase, PlusCircle, Calendar, User, Building, X } from 'lucide-react';
+import { LogOut, Briefcase, PlusCircle, Calendar, User, Building, X, Settings } from 'lucide-react';
 
 const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) => {
     return (
@@ -62,6 +62,12 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
                             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'profile' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <Building size={18} /> Company Profile
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('settings'); onClose && onClose(); }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'settings' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                        >
+                            <Settings size={18} /> Settings
                         </button>
                     </nav>
                 </div>

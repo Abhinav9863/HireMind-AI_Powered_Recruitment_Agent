@@ -23,7 +23,7 @@ const Profile = ({
     return (
         <div className="h-full overflow-y-auto p-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">My Profile</h2>
-            <div className="max-w-2xl bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
 
                 {/* Photo Section */}
                 <div className="flex items-center gap-6 mb-8">
@@ -102,7 +102,7 @@ const Profile = ({
                             value={formData.bio}
                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                             placeholder="Tell us about yourself..."
-                            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24 resize-none transition" />
+                            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24 resize-none transition whitespace-pre-wrap break-words" />
                     </div>
 
                     <div className="pt-2">

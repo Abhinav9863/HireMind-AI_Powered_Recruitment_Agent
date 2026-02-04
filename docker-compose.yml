@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgeSQL: The primary relational database for application data
   db:

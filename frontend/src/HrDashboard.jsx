@@ -10,6 +10,7 @@ import HrHeader from './components/hr_dashboard/HrHeader';
 import PostJob from './components/hr_dashboard/PostJob';
 import HrJobBoard from './components/hr_dashboard/HrJobBoard';
 import HrProfile from './components/hr_dashboard/HrProfile';
+import Settings from './components/dashboard/Settings';
 
 const HrDashboard = () => {
     const navigate = useNavigate();
@@ -568,6 +569,13 @@ const HrDashboard = () => {
                                     handleUpdateStatus={handleUpdateStatus}
                                     fetchApplicationDetail={fetchApplicationDetail}
                                 />
+                            </div>
+                        )}
+
+                        {/* SETTINGS TAB */}
+                        {activeTab === 'settings' && (
+                            <div className="max-w-6xl mx-auto h-full animate-fade-in-up">
+                                <Settings user={user} handleLogout={handleLogout} />
                             </div>
                         )}
                     </div>

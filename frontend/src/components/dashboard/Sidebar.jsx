@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Briefcase, Send, FileText, CheckCircle, X, User } from 'lucide-react';
+import { LogOut, Briefcase, Send, FileText, CheckCircle, X, User, Settings } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, isOpen, onClose }) => {
     return (
@@ -68,6 +68,12 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'profile' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <User size={18} /> My Profile
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('settings'); onClose && onClose(); }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'settings' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                        >
+                            <Settings size={18} /> Settings
                         </button>
                     </nav>
                 </div>

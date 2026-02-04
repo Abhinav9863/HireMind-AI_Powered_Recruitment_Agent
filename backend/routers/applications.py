@@ -122,11 +122,15 @@ async def update_application_status(
     elif status_update.status == "Rejected" and app.status != "Rejected":
         from email_utils import send_rejection_email
         
-        # Get Student Info for Email
+        # Get Student and Job Info for Email
         student_result = await session.execute(select(User).where(User.id == app.student_id))
         student = student_result.scalars().first()
         
-        await send_rejection_email(student.email, student.full_name)
+        # Fetch Job Title (if not already joined)
+        job_result = await session.execute(select(Job).where(Job.id == app.job_id))
+        job = job_result.scalars().first()
+        
+        await send_rejection_email(student.email, student.full_name, job.title)
 
         
     app.status = status_update.status

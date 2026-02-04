@@ -19,3 +19,4 @@ slowapi
 loguru
 requests
 resend
+sib-api-v3-sdk

@@ -30,6 +30,10 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
     phone_number: Optional[str] = None
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str

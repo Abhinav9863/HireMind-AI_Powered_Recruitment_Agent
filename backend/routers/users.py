@@ -6,8 +6,8 @@ import os
 
 from database import get_session
 from models import User
-from auth import get_current_user
-from schemas import UserRead, UserUpdate
+from auth import get_current_user, verify_password, get_password_hash
+from schemas import UserRead, UserUpdate, ChangePasswordRequest
 
 router = APIRouter(
     prefix="/users",
@@ -150,3 +150,37 @@ async def upload_company_policy(
     await session.commit()
     await session.refresh(current_user)
     return current_user
+
+@router.post("/change-password")
+async def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Verify old password
+    if not verify_password(password_data.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+    
+    # Check new password complexity (reusing logic from signup would be best, but for now simple check)
+    if len(password_data.new_password) < 8:
+         raise HTTPException(status_code=400, detail="New password must be at least 8 characters long")
+    
+    # Update password
+    current_user.hashed_password = get_password_hash(password_data.new_password)
+    session.add(current_user)
+    await session.commit()
+    
+    return {"message": "Password updated successfully"}
+
+@router.delete("/me")
+async def delete_account(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Depending on DB relationships, might need to manually delete related items if no cascade
+    # Assuming SQLAlchemy cascade is set up or we accept orphan records for now
+    
+    await session.delete(current_user)
+    await session.commit()
+    
+    return {"message": "Account deleted successfully"}

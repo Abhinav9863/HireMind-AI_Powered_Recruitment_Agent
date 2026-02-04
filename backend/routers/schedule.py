@@ -40,6 +40,18 @@ async def create_slot(
     if current_user.role != UserRole.HR:
         raise HTTPException(status_code=403, detail="Only HR can create interview slots")
 
+    # 1. Overlap Check
+    # Existing Start < New End AND Existing End > New Start
+    stmt = (
+        select(InterviewSlot)
+        .where(InterviewSlot.hr_id == current_user.id)
+        .where(InterviewSlot.start_time < slot.end_time.replace(tzinfo=None))
+        .where(InterviewSlot.end_time > slot.start_time.replace(tzinfo=None))
+    )
+    result = await session.execute(stmt)
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Slot occupied: This time range overlaps with an existing slot.")
+
     # Generate a simulated Google Meet link
     chars = "abcdefghijklmnopqrstuvwxyz"
     part1 = "".join(secrets.choice(chars) for _ in range(3))
@@ -115,6 +127,18 @@ async def update_slot(
     # Verify ownership
     if slot.hr_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only update your own slots")
+
+    # 1. Overlap Check (Excluding self)
+    stmt = (
+        select(InterviewSlot)
+        .where(InterviewSlot.hr_id == current_user.id)
+        .where(InterviewSlot.id != slot_id) 
+        .where(InterviewSlot.start_time < slot_update.end_time.replace(tzinfo=None))
+        .where(InterviewSlot.end_time > slot_update.start_time.replace(tzinfo=None))
+    )
+    result = await session.execute(stmt)
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Slot occupied: This time range overlaps with an existing slot.")
 
     # Store old times for email notification
     old_start = slot.start_time

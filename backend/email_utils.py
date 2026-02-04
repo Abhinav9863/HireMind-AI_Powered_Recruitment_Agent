@@ -272,9 +272,14 @@ async def send_interview_cancelled_email(to_email: str, candidate_name: str, job
     _send_email_base(to_email, subject, html_body)
 
 
-async def send_password_reset_email(to_email: str, reset_link: str):
+async def send_password_reset_email(to_email: str, full_name: str, reset_link: str):
     """
     Send password reset email
+    
+    Args:
+        to_email: Recipient email address
+        full_name: User's full name
+        reset_link: Password reset link with token
     """
     subject = "Password Reset Request - HireMind"
     
@@ -288,6 +293,7 @@ async def send_password_reset_email(to_email: str, reset_link: str):
           
           <div style="background: white; padding: 40px; border-radius: 0 0 10px 10px;">
             <h2 style="color: #667eea;">Reset Your Password</h2>
+            <p>Hi <strong>{full_name}</strong>,</p>
             <p>You requested to reset your password. Click the button below to proceed:</p>
             
             <div style="text-align: center; margin: 30px 0;">

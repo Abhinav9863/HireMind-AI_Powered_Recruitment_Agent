@@ -184,7 +184,7 @@ async def get_application_detail(
         "created_at": application.created_at,
         "candidate_name": student.full_name,
         "candidate_email": student.email,
-        "resume_path": student.resume_path,
+        "resume_path": application.resume_path or student.resume_path,
         "resume_text": application.resume_text,
         "candidate_info": application.candidate_info,
         "chat_history": application.chat_history,

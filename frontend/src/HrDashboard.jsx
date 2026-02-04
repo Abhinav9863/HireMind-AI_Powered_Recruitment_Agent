@@ -319,7 +319,7 @@ const HrDashboard = () => {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        {resume_path && (
+                        {resume_path ? (
                             <a
                                 href={`${API_URL}/${resume_path}`}
                                 target="_blank"
@@ -328,6 +328,13 @@ const HrDashboard = () => {
                             >
                                 <Download size={16} /> Resume
                             </a>
+                        ) : (
+                            <button
+                                disabled
+                                className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg text-sm font-bold cursor-not-allowed flex items-center gap-2 border border-gray-200"
+                            >
+                                <Download size={16} /> No Resume
+                            </button>
                         )}
                         <button
                             onClick={() => handleUpdateStatus(selectedAppDetail.id, 'Interviewing')}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Search, User, ChevronRight, ArrowLeft, Menu } from 'lucide-react';
 import { API_URL } from '../../config';
 
-const Header = ({ activeTab, user, toggleSidebar, setActiveTab }) => {
+const Header = ({ activeTab, user, toggleSidebar, setActiveTab, searchQuery, setSearchQuery }) => {
     return (
         <header className="h-20 bg-white flex items-center justify-between px-8 shrink-0 relative z-20 shadow-sm">
             <div className="flex items-center gap-4">

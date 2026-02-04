@@ -33,34 +33,36 @@ body {
 }
 
 /* Mobile: Stack layout, remove animation complexity */
+/* Mobile: Stack layout, remove animation complexity */
 @media (max-width: 768px) {
     .container {
-        @apply min-h-[600px] w-full m-4;
+        @apply relative h-auto w-[90%] max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden mx-auto my-8;
     }
 
     .form-container {
-        @apply absolute top-0 h-full transition-all duration-500 ease-in-out w-full;
+        @apply relative w-full h-auto transition-all duration-300 ease-in-out;
     }
 
+    /* Default state (Login) - Sign In visible, Sign Up hidden */
     .sign-in-container {
-        @apply left-0 z-20;
-    }
-
-    .container.right-panel-active .sign-in-container {
-        @apply transform translate-x-full opacity-0 pointer-events-none;
+        @apply block;
     }
 
     .sign-up-container {
-        @apply left-0 w-full z-10 opacity-0 pointer-events-none;
+        @apply hidden;
+    }
+
+    /* Active state (Signup) - Sign In hidden, Sign Up visible */
+    .container.right-panel-active .sign-in-container {
+        @apply hidden;
     }
 
     .container.right-panel-active .sign-up-container {
-        @apply opacity-100 pointer-events-auto transform-none z-30 transition-opacity;
+        @apply block;
     }
 
     .overlay-container {
         @apply hidden;
-        /* Hide the overlay transition on mobile to simplify */
     }
 }
 

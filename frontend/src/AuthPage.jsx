@@ -189,7 +189,7 @@ const AuthPage = () => {
             <div className={`container ${isSignUp ? 'right-panel-active' : ''} ${overlayClass}`}>
 
                 {/* Sign Up Form */}
-                <div className="form-container sign-up-container flex flex-col items-center justify-center p-12 bg-white text-center">
+                <div className="form-container sign-up-container flex flex-col items-center justify-center p-6 md:p-12 bg-white text-center">
                     <form className="flex flex-col items-center w-full h-full justify-center" onSubmit={handleAuth}>
                         <h1 className="text-2xl font-bold mb-4">Create {title} Account</h1>
 
@@ -226,7 +226,7 @@ const AuthPage = () => {
                 </div>
 
                 {/* Sign In Form */}
-                <div className="form-container sign-in-container flex flex-col items-center justify-center p-12 bg-white text-center">
+                <div className="form-container sign-in-container flex flex-col items-center justify-center p-6 md:p-12 bg-white text-center">
                     <form className="flex flex-col items-center w-full h-full justify-center" onSubmit={handleAuth}>
                         <h1 className="text-2xl font-bold mb-4">{title} Login</h1>
 

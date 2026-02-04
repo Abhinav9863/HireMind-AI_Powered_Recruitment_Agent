@@ -49,8 +49,9 @@ const HrSchedule = () => {
         setSubmitting(true);
 
         try {
-            const startISO = new Date(`${date}T${startTime}`).toISOString();
-            const endISO = new Date(`${date}T${endTime}`).toISOString();
+            // ✅ Fix: Send local time string directly to avoid UTC shift
+            const startISO = `${date}T${startTime}:00`;
+            const endISO = `${date}T${endTime}:00`;
 
             const token = localStorage.getItem('token');
             await axios.post(`${API_URL}/schedule/slots`, {
@@ -66,7 +67,7 @@ const HrSchedule = () => {
             showNotification('Slot added successfully!');
         } catch (error) {
             console.error("Error adding slot:", error);
-            showNotification('Failed to add slot', 'error');
+            showNotification(error.response?.data?.detail || 'Failed to add slot', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -74,11 +75,14 @@ const HrSchedule = () => {
 
     const handleEditClick = (slot) => {
         setEditingSlot(slot);
-        const slotDate = new Date(slot.start_time);
-        setEditDate(slotDate.toISOString().split('T')[0]);
-        setEditStartTime(slotDate.toTimeString().slice(0, 5));
-        const endDate = new Date(slot.end_time);
-        setEditEndTime(endDate.toTimeString().slice(0, 5));
+        // ✅ Fix: Parse string directly to avoid timezone conversions
+        // Assumption: Backend returns "YYYY-MM-DDTHH:MM:SS" (naive or consistent)
+        const [startDate, fullStartTime] = slot.start_time.split('T');
+        const [, fullEndTime] = slot.end_time.split('T');
+
+        setEditDate(startDate);
+        setEditStartTime(fullStartTime.slice(0, 5)); // HH:MM
+        setEditEndTime(fullEndTime.slice(0, 5));     // HH:MM
     };
 
     const handleUpdateSlot = async (e) => {
@@ -86,8 +90,9 @@ const HrSchedule = () => {
         setUpdating(true);
 
         try {
-            const startISO = new Date(`${editDate}T${editStartTime}`).toISOString();
-            const endISO = new Date(`${editDate}T${editEndTime}`).toISOString();
+            // ✅ Fix: Send local time string directly
+            const startISO = `${editDate}T${editStartTime}:00`;
+            const endISO = `${editDate}T${editEndTime}:00`;
 
             const token = localStorage.getItem('token');
             await axios.put(`${API_URL}/schedule/slots/${editingSlot.id}`, {

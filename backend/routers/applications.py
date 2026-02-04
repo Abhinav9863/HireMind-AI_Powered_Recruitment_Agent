@@ -17,6 +17,7 @@ router = APIRouter(
 
 class ApplicationRead(BaseModel):
     id: int
+    job_id: int  # ✅ Added job_id
     status: str
     job_title: str
     company_name: str
@@ -41,6 +42,7 @@ async def get_my_applications(
     for app, job in result:
         apps.append(ApplicationRead(
             id=app.id,
+            job_id=app.job_id,  # ✅ Populate job_id
             status=app.status,
             job_title=job.title,
             company_name=job.company,

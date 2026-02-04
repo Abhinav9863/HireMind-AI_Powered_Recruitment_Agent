@@ -4,7 +4,8 @@ import JobCard from './JobCard';
 
 const JobBoard = ({ jobs, searchQuery, myApplications, handleApply }) => {
     const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'applied' | 'unapplied'
-    const appliedJobIds = new Set(myApplications.map(app => app.job_id));
+    // Coerce IDs to strings to avoid mismatched types (e.g. string vs number)
+    const appliedJobIds = new Set(myApplications.map(app => String(app.job_id)));
 
     const filteredJobs = jobs.filter(job => {
         // 1. Search Filter
@@ -15,7 +16,7 @@ const JobBoard = ({ jobs, searchQuery, myApplications, handleApply }) => {
             job.job_type.toLowerCase().includes(searchQuery.toLowerCase());
 
         // 2. Status Filter
-        const isApplied = appliedJobIds.has(job.id);
+        const isApplied = appliedJobIds.has(String(job.id));
         let matchesStatus = true;
 
         if (filterStatus === 'applied') {
@@ -26,8 +27,8 @@ const JobBoard = ({ jobs, searchQuery, myApplications, handleApply }) => {
 
         return matchesSearch && matchesStatus;
     }).sort((a, b) => {
-        const isAppliedA = appliedJobIds.has(a.id);
-        const isAppliedB = appliedJobIds.has(b.id);
+        const isAppliedA = appliedJobIds.has(String(a.id));
+        const isAppliedB = appliedJobIds.has(String(b.id));
         if (isAppliedA === isAppliedB) return 0;
         return isAppliedA ? 1 : -1; // Unapplied (false) comes first
     });

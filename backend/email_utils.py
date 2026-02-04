@@ -72,6 +72,9 @@ async def send_email_otp(to_email: str, full_name: str, otp: str):
         full_name: User's full name
         otp: 6-digit OTP code
     """
+    # ✅ DEV MODE: Log OTP to console so it can be used even if email fails
+    logger.info(f"🔏 [DEV MODE] Generated OTP for {to_email}: {otp}")
+    
     subject = "Your HireMind Verification Code"
     
     html_body = f"""

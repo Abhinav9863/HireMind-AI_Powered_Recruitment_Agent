@@ -46,8 +46,16 @@ const InterviewChat = ({
             lastViolationTime.current = now;
 
             // Increment local count (optimistic, backend is source of truth)
-            setViolationCount(prev => prev + 1);
-            setShowWarning(true);
+            const newCount = violationCount + 1;
+            setViolationCount(newCount);
+
+            // IMMEDIATE LOCAL TERMINATION
+            if (newCount >= 3) {
+                setIsTerminated(true);
+                setShowWarning(false);
+            } else {
+                setShowWarning(true);
+            }
 
             // Log to Backend
             try {
@@ -61,9 +69,14 @@ const InterviewChat = ({
                 // Update from backend response
                 if (response.data.count) {
                     setViolationCount(response.data.count);
+                    // Re-enforce termination if backend says so (covers refreshing page case)
+                    if (response.data.count >= 3 || response.data.terminated) {
+                        setIsTerminated(true);
+                        setShowWarning(false);
+                    }
                 }
 
-                // Handle Termination
+                // Handle Termination explicit flag
                 if (response.data.terminated) {
                     setIsTerminated(true);
                     setShowWarning(false); // Hide warning, show termination
@@ -81,7 +94,7 @@ const InterviewChat = ({
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
         };
-    }, [applicationId]);
+    }, [applicationId, violationCount]); // Added violationCount to dependency array for accurate closure
 
     // Handle Redirect after Termination
     useEffect(() => {
@@ -103,10 +116,10 @@ const InterviewChat = ({
                         <div className="mx-auto bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mb-6 text-red-600 animate-pulse">
                             <AlertTriangle size={40} />
                         </div>
-                        <h3 className="text-2xl font-black text-gray-900 mb-3">INTERVIEW TERMINATED</h3>
+                        <h3 className="text-2xl font-black text-gray-900 mb-3">DISQUALIFIED: MALPRACTICE</h3>
                         <p className="text-gray-600 mb-8 text-base">
-                            You have exceeded the maximum limit of navigation violations.
-                            Your application has been automatically <strong>rejected</strong> due to suspicion of malpractice.
+                            Multiple navigation violations detected.
+                            Your interview has been terminated instantly.
                         </p>
                         <div className="bg-gray-100 rounded-lg p-4 mb-4">
                             <p className="text-sm font-medium text-gray-500">Redirecting to Dashboard in 5s...</p>

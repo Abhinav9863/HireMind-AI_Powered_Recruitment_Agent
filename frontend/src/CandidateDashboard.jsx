@@ -537,6 +537,7 @@ const CandidateDashboard = () => {
                             hasResume={hasResume}
                             profile={profile}
                             handleUseProfileResume={handleUseProfileResume}
+                            applicationId={applicationId}
                         />
                     )}
 

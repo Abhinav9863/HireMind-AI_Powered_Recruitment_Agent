@@ -97,12 +97,20 @@ const InterviewChat = ({
     }, [applicationId, violationCount]); // Added violationCount to dependency array for accurate closure
 
     // Handle Redirect after Termination
+    const [countdown, setCountdown] = useState(5);
     useEffect(() => {
         if (isTerminated) {
-            const timer = setTimeout(() => {
-                window.location.reload(); // Force reload to dashboard/reset state
-            }, 5000);
-            return () => clearTimeout(timer);
+            const interval = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        window.location.reload();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            return () => clearInterval(interval);
         }
     }, [isTerminated]);
 
@@ -122,7 +130,7 @@ const InterviewChat = ({
                             Your interview has been terminated instantly.
                         </p>
                         <div className="bg-gray-100 rounded-lg p-4 mb-4">
-                            <p className="text-sm font-medium text-gray-500">Redirecting to Dashboard in 5s...</p>
+                            <p className="text-sm font-medium text-gray-500">Redirecting to Dashboard in {countdown}s...</p>
                         </div>
                     </div>
                 </div>

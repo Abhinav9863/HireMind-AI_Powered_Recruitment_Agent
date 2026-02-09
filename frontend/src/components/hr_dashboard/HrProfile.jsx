@@ -27,7 +27,21 @@ const HrProfile = ({ user, setUser }) => {
     }, [user]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        let newValue = value;
+
+        // Validation: Full Name (Letters and spaces only)
+        if (name === 'full_name') {
+            newValue = value.replace(/[^a-zA-Z\s]/g, '');
+        }
+
+        // Validation: Phone Number (Numbers and '+' only, max 15 chars)
+        if (name === 'phone_number') {
+            newValue = value.replace(/[^0-9+]/g, '');
+            if (newValue.length > 15) newValue = newValue.slice(0, 15);
+        }
+
+        setFormData({ ...formData, [name]: newValue });
     };
 
     const handleSaveProfile = async (e) => {

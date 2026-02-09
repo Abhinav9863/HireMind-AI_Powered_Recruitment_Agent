@@ -4,7 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 
 const InterviewChat = ({
-    messages,
+    messages = [],
     messagesEndRef,
     input,
     setInput,
@@ -17,11 +17,35 @@ const InterviewChat = ({
     handleUseProfileResume,
     applicationId
 }) => {
+    // Notification State
+    const [notification, setNotification] = useState(null);
+    const notificationTimeoutRef = React.useRef(null);
+
     // Proctoring State
     const [violationCount, setViolationCount] = useState(0);
     const [showWarning, setShowWarning] = useState(false);
     const [isTerminated, setIsTerminated] = useState(false);
     const lastViolationTime = React.useRef(0);
+
+    const showNotification = (message) => {
+        if (notificationTimeoutRef.current) {
+            clearTimeout(notificationTimeoutRef.current);
+        }
+        setNotification(message);
+        notificationTimeoutRef.current = setTimeout(() => {
+            setNotification(null);
+            notificationTimeoutRef.current = null;
+        }, 3000);
+    };
+
+    // Cleanup notification timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (notificationTimeoutRef.current) {
+                clearTimeout(notificationTimeoutRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         // Only active if we have an active interview (applicationId exists)
@@ -87,12 +111,23 @@ const InterviewChat = ({
             }
         };
 
+        const handleCopyPaste = (e) => {
+            e.preventDefault();
+            showNotification("Action Not Allowed: Copying and pasting is disabled during the interview.");
+        };
+
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
+        window.addEventListener("copy", handleCopyPaste);
+        window.addEventListener("cut", handleCopyPaste);
+        window.addEventListener("paste", handleCopyPaste);
 
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
+            window.removeEventListener("copy", handleCopyPaste);
+            window.removeEventListener("cut", handleCopyPaste);
+            window.removeEventListener("paste", handleCopyPaste);
         };
     }, [applicationId, violationCount]); // Added violationCount to dependency array for accurate closure
 
@@ -116,6 +151,14 @@ const InterviewChat = ({
 
     return (
         <div className="h-full flex flex-col relative">
+
+            {/* Notification Toast */}
+            {notification && (
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in-down flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-yellow-400" />
+                    <span className="text-sm font-medium">{notification}</span>
+                </div>
+            )}
 
             {/* TERMINATED MODAL */}
             {isTerminated && (
@@ -211,6 +254,10 @@ const InterviewChat = ({
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onPaste={(e) => { e.preventDefault(); showNotification("Action Not Allowed: Paste is disabled."); }}
+                        onCopy={(e) => { e.preventDefault(); showNotification("Action Not Allowed: Copy is disabled."); }}
+                        onCut={(e) => { e.preventDefault(); showNotification("Action Not Allowed: Cut is disabled."); }}
+                        onDrop={(e) => { e.preventDefault(); }}
                         placeholder="Type your answer..."
                         className="flex-1 bg-gray-100 text-gray-900 border-0 rounded-xl py-3 px-5 focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all outline-none"
                     />

@@ -75,7 +75,10 @@ const Profile = ({
                             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                             <input type="text"
                                 value={formData.full_name}
-                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                                    setFormData({ ...formData, full_name: val });
+                                }}
                                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" />
                         </div>
                         <div>
@@ -83,7 +86,11 @@ const Profile = ({
                             <input type="text"
                                 value={formData.phone_number}
                                 placeholder="+1 234 567 8900"
-                                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                                onChange={(e) => {
+                                    let val = e.target.value.replace(/[^0-9+]/g, '');
+                                    if (val.length > 15) val = val.slice(0, 15);
+                                    setFormData({ ...formData, phone_number: val });
+                                }}
                                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" />
                         </div>
                     </div>

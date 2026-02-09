@@ -34,6 +34,14 @@ def _send_email_base(to_email: str, subject: str, html_body: str) -> bool:
     """
     email_from = os.getenv("EMAIL_FROM", "abhinavclass307@gmail.com")
     
+    # Log the sender being used
+    logger.info(f"📧 Sending email from: {email_from}")
+
+    # Check for misconfiguration (legacy Resend default)
+    if "resend.dev" in email_from:
+        logger.warning(f"⚠️  POTENTIAL MISCONFIGURATION: Sending from {email_from} which looks like a default Resend address.")
+        logger.warning("👉 Please check your .env file or docker-compose.yml to ensure EMAIL_FROM is set to your verified sender.")
+
     # Check if Brevo is configured
     if not configuration.api_key['api-key'] or "YourAPIKeyHere" in str(configuration.api_key['api-key']):
         logger.warning(f"📧 [DEV MODE] Email to {to_email} suppressed (Brevo API key not configured)")

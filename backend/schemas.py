@@ -93,6 +93,8 @@ class ApplicationRead(BaseModel):
     viewed: bool = False
     experience_years: int = 0
     created_at: datetime
+    tab_switch_count: int = 0
+    is_disqualified_malpractice: bool = False
     
 class ApplicationReadWithStudent(ApplicationRead):
     candidate_name: str

@@ -8,6 +8,7 @@ from pypdf import PdfReader
 import io
 import json
 from groq import Groq
+from datetime import datetime
 
 from database import get_session
 from models import Application, Job, User, UserRole
@@ -567,59 +568,72 @@ async def log_violation(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # Fetch Application
-    result = await session.execute(select(Application).where(Application.id == request.application_id))
-    app = result.scalars().first()
-    
-    if not app:
-        raise HTTPException(status_code=404, detail="Application not found")
-        
-    if app.student_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+    try:
+        with open("/tmp/malpractice_debug.log", "a") as f:
+            f.write(f"--- Request for App {request.application_id} ---\n")
 
-    # Append System Warning to History
-    current_history = list(app.chat_history) if app.chat_history else []
-    
-    # Append System Warning to History
-    current_history = list(app.chat_history) if app.chat_history else []
-    
-    # Check if the last message was already a violation to prevent flooding
-    # Using optimistic check on last message
-    if current_history and current_history[-1].get("role") == "system_alert":
-        # Even if we don't duplicate the log, we check the count
-        violation_count = sum(1 for msg in current_history if msg.get("role") == "system_alert")
-        return {"message": "Violation logged", "count": violation_count, "terminated": violation_count >= 3}
+        # Fetch Application
+        result = await session.execute(select(Application).where(Application.id == request.application_id))
+        app = result.scalars().first()
         
-    timestamp = datetime.utcnow().strftime("%H:%M:%S")
-    current_history.append({
-        "role": "system_alert", 
-        "content": f"⚠️ [PROCTORING ALERT] Candidate switched tabs or moved focus away at {timestamp} UTC."
-    })
-    
-    # COUNT VIOLATIONS
-    violation_count = 0
-    for msg in current_history:
-        if msg.get("role") == "system_alert":
-            violation_count += 1
+        if not app:
+            with open("/tmp/malpractice_debug.log", "a") as f: f.write("App not found\n")
+            raise HTTPException(status_code=404, detail="Application not found")
             
-    print(f"[DEBUG] App {request.application_id} Violation Count: {violation_count}")
-    
-    # 3-Strike Rule
-    is_terminated = False
-    if violation_count >= 3:
-        is_terminated = True
-        app.status = "Rejected"
+        with open("/tmp/malpractice_debug.log", "a") as f:
+             f.write(f"App found: {app.id}, Student: {app.student_id}\n")
+
+        if app.student_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+
+        if app.is_disqualified_malpractice:
+             return {"message": "Already disqualified", "count": app.tab_switch_count, "terminated": True}
+
+        # Append System Warning to History
+        current_history = list(app.chat_history) if app.chat_history else []
+        
+        timestamp = datetime.utcnow().strftime("%H:%M:%S")
         current_history.append({
-            "role": "system_alert",
-            "content": "🚫 [DISQUALIFIED] Interview terminated due to multiple proctoring violations."
+            "role": "system_alert", 
+            "content": f"⚠️ [PROCTORING ALERT] Candidate switched tabs or moved focus away at {timestamp} UTC."
         })
-    
-    app.chat_history = current_history
-    session.add(app)
-    await session.commit()
-    
-    return {
-        "message": "Violation logged", 
-        "count": violation_count, 
-        "terminated": is_terminated
-    }
+        
+        # COUNT VIOLATIONS
+        violation_count = 0
+        for msg in current_history:
+            if msg.get("role") == "system_alert":
+                violation_count += 1
+                
+        with open("/tmp/malpractice_debug.log", "a") as f:
+             f.write(f"Violation count: {violation_count}\n")
+
+        # Update Malpractice Fields
+        app.tab_switch_count = violation_count
+        
+        # 3-Strike Rule
+        is_terminated = False
+        if violation_count >= 3:
+            is_terminated = True
+            app.status = "Rejected"
+            app.is_disqualified_malpractice = True
+            current_history.append({
+                "role": "system_alert",
+                "content": "🚫 [DISQUALIFIED] Interview terminated due to multiple proctoring violations."
+            })
+            with open("/tmp/malpractice_debug.log", "a") as f: f.write("Terminating interview\n")
+        
+        app.chat_history = current_history
+        session.add(app)
+        await session.commit()
+        
+        return {
+            "message": "Violation logged", 
+            "count": violation_count, 
+            "terminated": is_terminated
+        }
+    except Exception as e:
+        import traceback
+        with open("/tmp/malpractice_debug.log", "a") as f:
+            f.write(f"ERROR: {str(e)}\n")
+            traceback.print_exc(file=f)
+        raise HTTPException(status_code=500, detail=str(e))

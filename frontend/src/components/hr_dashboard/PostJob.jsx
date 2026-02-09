@@ -190,7 +190,12 @@ const PostJob = ({
                                 type="text"
                                 name="salary_range"
                                 value={formData.salary_range}
-                                onChange={handleInputChange}
+                                onChange={(e) => {
+                                    // Only allow numbers, $, -, ,, ., k, K, and spaces
+                                    if (/^[0-9kK$\-,. ]*$/.test(e.target.value)) {
+                                        handleInputChange(e);
+                                    }
+                                }}
                                 required
                                 className="w-full pl-10 p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder-gray-400"
                                 placeholder="e.g. $100k - $120k"

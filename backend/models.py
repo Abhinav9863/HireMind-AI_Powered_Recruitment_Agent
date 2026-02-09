@@ -71,6 +71,10 @@ class Application(SQLModel, table=True):
     generated_questions: Optional[list] = Field(default=[], sa_column=Column(JSON))
     current_question_index: int = Field(default=0)
     chat_history: Optional[list] = Field(default=[], sa_column=Column(JSON))
+    
+    # Malpractice Tracking
+    tab_switch_count: int = Field(default=0)
+    is_disqualified_malpractice: bool = Field(default=False)
 
 class ATSAnalysis(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

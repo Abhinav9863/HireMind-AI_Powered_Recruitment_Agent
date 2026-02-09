@@ -210,8 +210,20 @@ const HrJobBoard = ({
                                             {!app.viewed && (
                                                 <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse shadow-sm">NEW</span>
                                             )}
+                                            {app.is_disqualified_malpractice && (
+                                                <span className="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm flex items-center gap-1">
+                                                    🚫 DISQUALIFIED
+                                                </span>
+                                            )}
                                         </div>
-                                        <p className="text-xs text-gray-500 truncate">{app.candidate_email}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs text-gray-500 truncate">{app.candidate_email}</p>
+                                            {app.tab_switch_count > 0 && (
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${app.tab_switch_count >= 3 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                                                    ⚠️ {app.tab_switch_count} Switches
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Status */}
@@ -316,7 +328,11 @@ const HrJobBoard = ({
                                     <input
                                         type="text"
                                         value={editFormData.salary_range}
-                                        onChange={(e) => setEditFormData({ ...editFormData, salary_range: e.target.value })}
+                                        onChange={(e) => {
+                                            if (/^[0-9kK$\-,. ]*$/.test(e.target.value)) {
+                                                setEditFormData({ ...editFormData, salary_range: e.target.value });
+                                            }
+                                        }}
                                         className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
                                         required
                                     />

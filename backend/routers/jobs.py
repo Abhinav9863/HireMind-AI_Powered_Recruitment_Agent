@@ -206,9 +206,12 @@ async def delete_job(
     if job.hr_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only delete your own jobs")
         
-    # Optional: Delete related applications or cascade? 
-    # SQLAlchemy relationship cascade usually handles this, but let's be safe.
-    # For now, we assume simple deletion is enough.
+    # Delete related applications first (Manual Cascade)
+    result_apps = await session.execute(select(Application).where(Application.job_id == job_id))
+    applications = result_apps.scalars().all()
+    
+    for app in applications:
+        await session.delete(app)
     
     await session.delete(job)
     await session.commit()

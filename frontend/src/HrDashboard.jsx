@@ -15,6 +15,25 @@ import Settings from './components/dashboard/Settings';
 const HrDashboard = () => {
     const navigate = useNavigate();
     const { addNotification } = useNotification();
+
+    // Add axios interceptor to handle 401s globally within this component's scope
+    // (Ideally this should be in a global api configuration file, but this works for now)
+    React.useEffect(() => {
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && error.response.status === 401) {
+                    localStorage.removeItem('token');
+                    navigate('/login'); // Or home '/'
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            axios.interceptors.response.eject(interceptor);
+        };
+    }, [navigate]);
     const [activeTab, setActiveTab] = useState('my-jobs'); // 'post-job' | 'my-jobs' | 'schedule' | 'profile'
     const [myJobs, setMyJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
@@ -30,7 +49,6 @@ const HrDashboard = () => {
     // Form States
     const [formData, setFormData] = useState({
         title: '',
-        company: '',
         description: '',
         location: '',
         salary_range: '',
@@ -195,7 +213,7 @@ const HrDashboard = () => {
             });
             setMessage('Job Posted Successfully!');
             setFormData({
-                title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', work_location: 'In-Office', experience_required: 0
+                title: '', description: '', location: '', salary_range: '', job_type: 'Full-time', work_location: 'In-Office', experience_required: 0
             });
             setPolicyFile(null);
             showNotification("Job Posted Successfully!", 'success');

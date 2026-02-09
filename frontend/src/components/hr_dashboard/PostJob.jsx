@@ -11,7 +11,7 @@ const PostJob = ({
     currentUser // ✅ NEW: Receive currentUser
 }) => {
     // Local state for the "Use Profile Policy" checkbox
-    const [useProfilePolicy, setUseProfilePolicy] = React.useState(false);
+
 
     // Wrapper for handlePostJob to inject the useProfilePolicy flag
     const onSubmit = (e) => {

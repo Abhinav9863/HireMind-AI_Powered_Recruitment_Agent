@@ -22,6 +22,11 @@ const HrJobBoard = ({
         title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', work_location: 'In-Office', experience_required: 0
     });
 
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+    const [jobToDelete, setJobToDelete] = React.useState(null);
+
     const handleEditClick = (e, job) => {
         e.stopPropagation();
         setEditingJob(job);
@@ -40,8 +45,15 @@ const HrJobBoard = ({
 
     const handleDeleteClick = (e, job) => {
         e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
-            handleDeleteJob(job.id);
+        setJobToDelete(job);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (jobToDelete) {
+            handleDeleteJob(jobToDelete.id);
+            setIsDeleteModalOpen(false);
+            setJobToDelete(null);
         }
     };
 
@@ -380,7 +392,44 @@ const HrJobBoard = ({
                     </div>
                 </div>
             )}
-        </div>
+            {/* Delete Confirmation Modal */}
+            {
+                isDeleteModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => { e.stopPropagation(); }}>
+                        <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-scale-up" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Job?</h3>
+                                <p className="text-gray-500 text-sm">
+                                    Are you sure you want to delete <span className="font-bold text-gray-800">"{jobToDelete?.title}"</span>? This action cannot be undone.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 
 };

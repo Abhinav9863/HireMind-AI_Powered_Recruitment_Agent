@@ -8,7 +8,7 @@ from typing import List
 
 from database import get_session
 from models import Job, User, UserRole, Application
-from schemas import JobCreate, JobRead, TokenData, ApplicationReadWithStudent
+from schemas import JobCreate, JobRead, JobUpdate, TokenData, ApplicationReadWithStudent
 from auth import oauth2_scheme, get_current_user
 
 router = APIRouter(
@@ -156,3 +156,61 @@ async def get_job_applications(job_id: int, current_user: User = Depends(get_cur
         final_results.append(app_dict)
         
     return final_results
+
+@router.put("/{job_id}", response_model=JobRead)
+async def update_job(
+    job_id: int,
+    job_update: JobUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if current_user.role != UserRole.HR:
+        raise HTTPException(status_code=403, detail="Only HR can update jobs")
+        
+    result = await session.execute(select(Job).where(Job.id == job_id))
+    job = result.scalars().first()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    if job.hr_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only update your own jobs")
+    
+    job_data = job_update.dict(exclude_unset=True)
+    for key, value in job_data.items():
+        setattr(job, key, value)
+        
+    session.add(job)
+    await session.commit()
+    await session.refresh(job)
+    
+    # Populate counts for response to match JobRead schema
+    # (Though pure update usually just returns the object, keeping it consistent)
+    return job
+
+@router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_job(
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if current_user.role != UserRole.HR:
+        raise HTTPException(status_code=403, detail="Only HR can delete jobs")
+        
+    result = await session.execute(select(Job).where(Job.id == job_id))
+    job = result.scalars().first()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    if job.hr_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only delete your own jobs")
+        
+    # Optional: Delete related applications or cascade? 
+    # SQLAlchemy relationship cascade usually handles this, but let's be safe.
+    # For now, we assume simple deletion is enough.
+    
+    await session.delete(job)
+    await session.commit()
+    return None
+

@@ -58,6 +58,15 @@ class JobCreate(BaseModel):
     work_location: str = "In-Office"
     experience_required: int = 0
 
+class JobUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    salary_range: Optional[str] = None
+    job_type: Optional[str] = None
+    work_location: Optional[str] = None
+    experience_required: Optional[int] = None
+
 class JobRead(JobCreate):
     id: int
     company: str

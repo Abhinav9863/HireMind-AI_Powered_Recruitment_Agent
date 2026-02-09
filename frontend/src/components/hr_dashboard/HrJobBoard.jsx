@@ -12,8 +12,44 @@ const HrJobBoard = ({
     applications,
     handleUpdateStatus, // We might need to pass this down or handle it in a parent/sub-component
     fetchApplicationDetail, // Or this
-    renderApplicationDetail // This is a function that returns JSX
+    renderApplicationDetail, // This is a function that returns JSX
+    handleUpdateJob,
+    handleDeleteJob
 }) => {
+    const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+    const [editingJob, setEditingJob] = React.useState(null);
+    const [editFormData, setEditFormData] = React.useState({
+        title: '', company: '', description: '', location: '', salary_range: '', job_type: 'Full-time', work_location: 'In-Office', experience_required: 0
+    });
+
+    const handleEditClick = (e, job) => {
+        e.stopPropagation();
+        setEditingJob(job);
+        setEditFormData({
+            title: job.title,
+            company: job.company,
+            description: job.description,
+            location: job.location,
+            salary_range: job.salary_range,
+            job_type: job.job_type,
+            work_location: job.work_location,
+            experience_required: job.experience_required
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleDeleteClick = (e, job) => {
+        e.stopPropagation();
+        if (window.confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
+            handleDeleteJob(job.id);
+        }
+    };
+
+    const submitEdit = (e) => {
+        e.preventDefault();
+        handleUpdateJob(editingJob.id, editFormData);
+        setIsEditModalOpen(false);
+    };
 
     /* 
        Note: The logic for viewing applicants is currently nested here. 
@@ -100,8 +136,24 @@ const HrJobBoard = ({
                                 )}
                             </div>
 
-                            <div className="flex items-center text-sm font-bold text-indigo-600 group-hover:text-indigo-800 transition-colors">
-                                Manage <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                            <div className="flex items-center gap-2 relative z-20">
+                                <button
+                                    onClick={(e) => handleEditClick(e, job)}
+                                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                                    title="Edit Job"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </button>
+                                <button
+                                    onClick={(e) => handleDeleteClick(e, job)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                    title="Delete Job"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                                <div className="ml-2 flex items-center text-sm font-bold text-indigo-600 group-hover:text-indigo-800 transition-colors">
+                                    View <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -200,6 +252,134 @@ const HrJobBoard = ({
             {/* Mobile Search - if needed, but we have it in Header for desktop */}
 
             {renderJobsList()}
+
+            {/* Edit Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => { e.stopPropagation(); }}>
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-up" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                            <h2 className="text-xl font-bold text-gray-900">Edit Job Posting</h2>
+                            <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={submitEdit} className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Job Title</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.title}
+                                        onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Company</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.company}
+                                        onChange={(e) => setEditFormData({ ...editFormData, company: e.target.value })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Location</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.location}
+                                        onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Salary Range</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.salary_range}
+                                        onChange={(e) => setEditFormData({ ...editFormData, salary_range: e.target.value })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Job Type</label>
+                                    <select
+                                        value={editFormData.job_type}
+                                        onChange={(e) => setEditFormData({ ...editFormData, job_type: e.target.value })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    >
+                                        <option>Full-time</option>
+                                        <option>Part-time</option>
+                                        <option>Contract</option>
+                                        <option>Internship</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Work Location</label>
+                                    <select
+                                        value={editFormData.work_location}
+                                        onChange={(e) => setEditFormData({ ...editFormData, work_location: e.target.value })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    >
+                                        <option>In-Office</option>
+                                        <option>Remote</option>
+                                        <option>Hybrid</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Experience</label>
+                                    <select
+                                        value={editFormData.experience_required}
+                                        onChange={(e) => setEditFormData({ ...editFormData, experience_required: parseInt(e.target.value) })}
+                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    >
+                                        {[...Array(11).keys()].map(num => (
+                                            <option key={num} value={num}>{num === 0 ? 'Fresher' : `${num} Years`}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
+                                <textarea
+                                    value={editFormData.description}
+                                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none min-h-[150px]"
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditModalOpen(false)}
+                                    className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 

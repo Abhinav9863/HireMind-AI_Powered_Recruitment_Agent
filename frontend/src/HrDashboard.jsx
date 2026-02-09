@@ -281,6 +281,34 @@ const HrDashboard = () => {
         }
     };
 
+    const handleUpdateJob = async (jobId, updatedData) => {
+        const token = localStorage.getItem('token');
+        try {
+            await axios.put(`${API_URL}/jobs/${jobId}`, updatedData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showNotification("Job updated successfully!", 'success');
+            fetchMyJobs(); // Refresh list
+        } catch (error) {
+            console.error(error);
+            showNotification("Failed to update job.", 'error');
+        }
+    };
+
+    const handleDeleteJob = async (jobId) => {
+        const token = localStorage.getItem('token');
+        try {
+            await axios.delete(`${API_URL}/jobs/${jobId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showNotification("Job deleted successfully.", 'success');
+            fetchMyJobs(); // Refresh list
+        } catch (error) {
+            console.error(error);
+            showNotification("Failed to delete job.", 'error');
+        }
+    };
+
     const fetchJobSummary = async (jobId) => {
         const token = localStorage.getItem('token');
         setSummaryLoading(true);
@@ -575,6 +603,8 @@ const HrDashboard = () => {
                                     applications={applications}
                                     handleUpdateStatus={handleUpdateStatus}
                                     fetchApplicationDetail={fetchApplicationDetail}
+                                    handleUpdateJob={handleUpdateJob}
+                                    handleDeleteJob={handleDeleteJob}
                                 />
                             </div>
                         )}

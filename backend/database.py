@@ -28,45 +28,31 @@ async def init_db():
         # We use raw SQL 'DO' blocks to safely add columns if they don't exist
         # This is safer than checking information_schema manually in python
 
-        # Job: experience_required
-        await conn.execute(text("""
-            DO $$ 
-            BEGIN 
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job' AND column_name='experience_required') THEN 
-                    ALTER TABLE job ADD COLUMN experience_required INTEGER DEFAULT 0 NOT NULL; 
-                END IF;
-            END $$;
-        """))
+        # ---------------------------------------------------------
+        # AUTO-MIGRATION: Check & Add Missing Columns for Production
+        # ---------------------------------------------------------
+        from sqlalchemy import text
+        
+        # Helper function to add column if it doesn't exist
+        async def ensure_column(table, column, definition):
+            try:
+                # Check if column exists
+                check_sql = text(f"SELECT 1 FROM information_schema.columns WHERE table_name='{table}' AND column_name='{column}'")
+                result = await conn.execute(check_sql)
+                if not result.fetchone():
+                    print(f"⚠️ Column '{column}' missing in '{table}'. Adding...")
+                    await conn.execute(text(f"ALTER TABLE \"{table}\" ADD COLUMN {column} {definition}"))
+                    print(f"✅ Added column '{column}' to '{table}'")
+                else:
+                    print(f"start_up_check: Column '{column}' exists in '{table}'")
+            except Exception as e:
+                print(f"❌ Error checking/adding column {column} in {table}: {e}")
 
-        # Job: work_location
-        await conn.execute(text("""
-            DO $$ 
-            BEGIN 
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job' AND column_name='work_location') THEN 
-                    ALTER TABLE job ADD COLUMN work_location VARCHAR DEFAULT 'In-Office' NOT NULL; 
-                END IF;
-            END $$;
-        """))
-
-        # Job: policy_path
-        await conn.execute(text("""
-            DO $$ 
-            BEGIN 
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job' AND column_name='policy_path') THEN 
-                    ALTER TABLE job ADD COLUMN policy_path VARCHAR; 
-                END IF;
-            END $$;
-        """))
-
-        # User: company_policy_path
-        await conn.execute(text("""
-            DO $$ 
-            BEGIN 
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user' AND column_name='company_policy_path') THEN 
-                    ALTER TABLE "user" ADD COLUMN company_policy_path VARCHAR; 
-                END IF;
-            END $$;
-        """))
+        # Execute checks
+        await ensure_column('job', 'experience_required', 'INTEGER DEFAULT 0 NOT NULL')
+        await ensure_column('job', 'work_location', "VARCHAR DEFAULT 'In-Office' NOT NULL")
+        await ensure_column('job', 'policy_path', 'VARCHAR')
+        await ensure_column('user', 'company_policy_path', 'VARCHAR')
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(

@@ -217,6 +217,9 @@ const HrDashboard = () => {
             });
             setPolicyFile(null);
             showNotification("Job Posted Successfully!", 'success');
+
+            // ✅ FIX: Refresh job list after successful post
+            fetchMyJobs();
         } catch (error) {
             console.error(error);
             const errorMsg = error.response?.data?.detail || "Failed to post job.";

@@ -219,8 +219,9 @@ const HrDashboard = () => {
             showNotification("Job Posted Successfully!", 'success');
         } catch (error) {
             console.error(error);
-            setMessage('Failed to post job.');
-            showNotification("Failed to post job.", 'error');
+            const errorMsg = error.response?.data?.detail || "Failed to post job.";
+            setMessage(errorMsg);
+            showNotification(errorMsg, 'error');
         } finally {
             setLoading(false);
         }

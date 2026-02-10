@@ -351,6 +351,34 @@ const CandidateDashboard = () => {
 
             const aiMsg = { id: Date.now() + 1, sender: 'ai', text: response.data.reply };
             setMessages(prev => [...prev, aiMsg]);
+
+            // ✅ CHECK FOR INTERVIEW COMPLETION
+            if (response.data.interview_step === 'completed' ||
+                response.data.reply.includes('Thank you for completing the interview')) {
+
+                // Show completion message with countdown
+                let countdown = 3;
+                const countdownInterval = setInterval(() => {
+                    setMessages(prev => {
+                        const lastMsg = prev[prev.length - 1];
+                        const updatedMsg = {
+                            ...lastMsg,
+                            text: `${response.data.reply}\n\nRedirecting to dashboard in ${countdown}s...`
+                        };
+                        return [...prev.slice(0, -1), updatedMsg];
+                    });
+
+                    countdown--;
+                    if (countdown < 0) {
+                        clearInterval(countdownInterval);
+                        // Clear selected job and redirect to dashboard
+                        setSelectedJob(null);
+                        setApplicationId(null);
+                        setActiveTab('jobs');
+                        fetchMyApplications(); // Refresh applications list
+                    }
+                }, 1000);
+            }
         } catch (error) {
             console.error("AI Error:", error);
             const errorMsg = { id: Date.now() + 1, sender: 'ai', text: "Sorry, I'm having trouble connecting to the interview server." };

@@ -248,6 +248,7 @@ class MockLoginRequest(BaseModel):
     role: str
 
 
+
 @app.get("/auth/verify")
 async def verify_email(token: str, session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(User).where(User.verification_token == token))
@@ -262,6 +263,60 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
     await session.commit()
     
     return {"message": "Email verified successfully! You can now login."}
+
+
+# ✅ DEBUG ENDPOINT: Manual Schema Fix for Production
+@app.get("/debug/fix-schema")
+async def debug_fix_schema():
+    """
+    Manually triggers the database schema migration to add missing columns.
+    Run this if you encounter 500 errors on production.
+    """
+    from sqlalchemy import text
+    from database import engine
+    
+    log = []
+    
+    try:
+        async with engine.begin() as conn:
+            log.append("Connected to database.")
+            
+            # Helper to run migration logic
+            async def check_and_add(table, col, sql):
+                try:
+                    # Check if column exists
+                    check_sql = text(f"SELECT 1 FROM information_schema.columns WHERE table_name='{table}' AND column_name='{col}'")
+                    result = await conn.execute(check_sql)
+                    if result.fetchone():
+                        log.append(f"✅ Column '{col}' already exists in '{table}'.")
+                    else:
+                        log.append(f"⚠️ Column '{col}' missing in '{table}'. Adding...")
+                        await conn.execute(text(sql))
+                        log.append(f"🎉 Added column '{col}' to '{table}'.")
+                except Exception as e:
+                    log.append(f"❌ Error with '{col}': {str(e)}")
+
+            # 1. Job: experience_required
+            await check_and_add('job', 'experience_required', 
+                "ALTER TABLE job ADD COLUMN experience_required INTEGER DEFAULT 0 NOT NULL")
+            
+            # 2. Job: work_location
+            await check_and_add('job', 'work_location', 
+                "ALTER TABLE job ADD COLUMN work_location VARCHAR DEFAULT 'In-Office' NOT NULL")
+
+            # 3. Job: policy_path
+            await check_and_add('job', 'policy_path', 
+                "ALTER TABLE job ADD COLUMN policy_path VARCHAR")
+
+            # 4. User: company_policy_path
+            await check_and_add('user', 'company_policy_path', 
+                'ALTER TABLE "user" ADD COLUMN company_policy_path VARCHAR')
+
+        log.append("Schema check completed.")
+        return {"status": "success", "log": log}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e), "log": log}
 
 
 # ============================================================================

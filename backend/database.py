@@ -48,11 +48,17 @@ async def init_db():
             except Exception as e:
                 print(f"❌ Error checking/adding column {column} in {table}: {e}")
 
-        # Execute checks
+        # Execute checks for Job table
         await ensure_column('job', 'experience_required', 'INTEGER DEFAULT 0 NOT NULL')
         await ensure_column('job', 'work_location', "VARCHAR DEFAULT 'In-Office' NOT NULL")
         await ensure_column('job', 'policy_path', 'VARCHAR')
+        
+        # Execute checks for User table
         await ensure_column('user', 'company_policy_path', 'VARCHAR')
+        
+        # Execute checks for Application table (Malpractice Detection)
+        await ensure_column('application', 'tab_switch_count', 'INTEGER DEFAULT 0 NOT NULL')
+        await ensure_column('application', 'is_disqualified_malpractice', 'BOOLEAN DEFAULT FALSE NOT NULL')
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(

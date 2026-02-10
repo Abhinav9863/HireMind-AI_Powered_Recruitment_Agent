@@ -311,6 +311,14 @@ async def debug_fix_schema():
             # 4. User: company_policy_path
             await check_and_add('user', 'company_policy_path', 
                 'ALTER TABLE "user" ADD COLUMN company_policy_path VARCHAR')
+            
+            # 5. Application: tab_switch_count (Malpractice Detection)
+            await check_and_add('application', 'tab_switch_count',
+                'ALTER TABLE application ADD COLUMN tab_switch_count INTEGER DEFAULT 0 NOT NULL')
+            
+            # 6. Application: is_disqualified_malpractice (Malpractice Detection)
+            await check_and_add('application', 'is_disqualified_malpractice',
+                'ALTER TABLE application ADD COLUMN is_disqualified_malpractice BOOLEAN DEFAULT FALSE NOT NULL')
 
         log.append("Schema check completed.")
         return {"status": "success", "log": log}

@@ -1,6 +1,9 @@
 FROM python:3.10-slim
 
+
 WORKDIR /app
+
+# Force Rebuild: v2 (Schema Fix)
 
 # Install system dependencies (needed for some python packages like psycopg2)
 RUN apt-get update && apt-get install -y \

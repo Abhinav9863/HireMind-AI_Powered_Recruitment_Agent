@@ -96,7 +96,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to HireMind API"}
+    return {"message": "Welcome to HireMind API - v2 (Schema Fix Applied)"}
 
 @app.post("/auth/signup", response_model=Token)
 async def signup(user: UserCreate, session: AsyncSession = Depends(get_session)):

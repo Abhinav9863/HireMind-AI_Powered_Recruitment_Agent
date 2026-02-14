@@ -78,7 +78,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                     </nav>
                 </div>
 
-                <div className="hidden md:flex flex-1 min-h-0 px-4 md:px-8 py-2 md:py-4">
+                <div className="hidden md:flex md:flex-col flex-1 min-h-0 px-4 md:px-8 py-2 md:py-4">
                     <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-6">Candidate<br />Dashboard</h3>
                     <div
                         onClick={() => { setActiveTab('profile'); onClose && onClose(); }}

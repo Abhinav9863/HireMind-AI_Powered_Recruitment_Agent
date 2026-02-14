@@ -19,7 +19,7 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
                 transform transition-transform duration-300 ease-in-out shrink-0 font-sans flex flex-col
                 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
-                <div className="p-8 relative">
+                <div className="p-8 relative shrink-0">
                     {/* Mobile Close Button */}
                     <button
                         onClick={onClose}
@@ -72,7 +72,9 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
                     </nav>
                 </div>
 
-                <div className="mt-auto p-8">
+                <div className="flex-1"></div>
+
+                <div className="shrink-0 p-8 border-t border-white/10">
                     <button onClick={handleLogout} className="flex items-center gap-3 text-indigo-200 hover:text-white transition-colors text-sm font-medium">
                         <LogOut size={18} /> Logout
                     </button>

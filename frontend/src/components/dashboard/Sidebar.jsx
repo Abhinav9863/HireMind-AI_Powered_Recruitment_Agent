@@ -19,7 +19,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                 transform transition-transform duration-300 ease-in-out shrink-0 font-sans flex flex-col
                 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
-                <div className="p-8 relative">
+                <div className="p-8 relative shrink-0">
                     {/* Mobile Close Button */}
                     <button
                         onClick={onClose}
@@ -78,7 +78,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                     </nav>
                 </div>
 
-                <div className="px-8 mb-8">
+                <div className="flex-1 overflow-y-auto px-8 py-4">
                     <h3 className="text-xl font-bold mb-6">Candidate<br />Dashboard</h3>
                     <div
                         onClick={() => { setActiveTab('profile'); onClose && onClose(); }}
@@ -109,7 +109,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                     </div>
                 </div>
 
-                <div className="mt-auto p-8">
+                <div className="shrink-0 p-8 border-t border-white/10">
                     <button onClick={handleLogout} className="flex items-center gap-3 text-indigo-200 hover:text-white transition-colors text-sm font-medium">
                         <LogOut size={18} /> Logout
                     </button>

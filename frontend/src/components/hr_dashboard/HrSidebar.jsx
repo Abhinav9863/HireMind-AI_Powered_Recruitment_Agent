@@ -14,7 +14,7 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
 
             {/* Sidebar Container */}
             <aside className={`
-                fixed md:relative z-50 h-full w-72 
+                fixed md:relative z-50 h-screen md:h-full w-72 
                 bg-gradient-to-b from-indigo-900 to-violet-900 text-white 
                 transform transition-transform duration-300 ease-in-out shrink-0 font-sans flex flex-col
                 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}

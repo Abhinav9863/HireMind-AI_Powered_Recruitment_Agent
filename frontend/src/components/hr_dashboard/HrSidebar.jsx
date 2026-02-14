@@ -19,7 +19,7 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
                 transform transition-transform duration-300 ease-in-out shrink-0 font-sans flex flex-col
                 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
-                <div className="p-8 relative shrink-0">
+                <div className="p-4 md:p-8 relative shrink-0">
                     {/* Mobile Close Button */}
                     <button
                         onClick={onClose}
@@ -28,7 +28,7 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
                         <X size={24} />
                     </button>
 
-                    <div className="flex items-center gap-3 mb-8">
+                    <div className="flex items-center gap-3 mb-4 md:mb-8">
                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
                             <div className="w-6 h-6 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-lg"></div>
                         </div>
@@ -38,34 +38,34 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
                         </div>
                     </div>
 
-                    <nav className="space-y-2">
+                    <nav className="space-y-1 md:space-y-2">
                         <button
                             onClick={() => { setActiveTab('my-jobs'); onClose && onClose(); }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'my-jobs' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                            className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'my-jobs' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <Briefcase size={18} /> My Jobs
                         </button>
                         <button
                             onClick={() => { setActiveTab('post-job'); onClose && onClose(); }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'post-job' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                            className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'post-job' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <PlusCircle size={18} /> Post a Job
                         </button>
                         <button
                             onClick={() => { setActiveTab('schedule'); onClose && onClose(); }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'schedule' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                            className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'schedule' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <Calendar size={18} /> Schedule
                         </button>
                         <button
                             onClick={() => { setActiveTab('profile'); onClose && onClose(); }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'profile' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                            className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'profile' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <Building size={18} /> Company Profile
                         </button>
                         <button
                             onClick={() => { setActiveTab('settings'); onClose && onClose(); }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'settings' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
+                            className={`w-full flex items-center gap-3 p-2 md:p-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'settings' ? 'bg-white/10 text-white shadow-lg shadow-indigo-900/20' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}`}
                         >
                             <Settings size={18} /> Settings
                         </button>
@@ -74,7 +74,7 @@ const HrSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, onClose }) =
 
                 <div className="flex-1"></div>
 
-                <div className="shrink-0 p-8 border-t border-white/10">
+                <div className="shrink-0 p-4 md:p-8 border-t border-white/10">
                     <button onClick={handleLogout} className="flex items-center gap-3 text-indigo-200 hover:text-white transition-colors text-sm font-medium">
                         <LogOut size={18} /> Logout
                     </button>

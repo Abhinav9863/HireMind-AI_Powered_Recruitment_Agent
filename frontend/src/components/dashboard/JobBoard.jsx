@@ -69,11 +69,11 @@ const JobBoard = ({ jobs, searchQuery, myApplications, handleApply }) => {
                 <h2 className="text-2xl font-bold text-gray-800 font-sans">Available Opportunities</h2>
 
                 {/* Filter Dropdown */}
-                <div className="relative">
+                <div className="relative w-full md:w-auto">
                     <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium text-sm cursor-pointer shadow-sm hover:border-gray-300 transition-colors"
+                        className="appearance-none w-full md:w-auto bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium text-sm cursor-pointer shadow-sm hover:border-gray-300 transition-colors"
                     >
                         <option value="all">All Jobs</option>
                         <option value="applied">Applied</option>

@@ -126,11 +126,11 @@ const Profile = ({
                 <div className="border-t border-gray-100 my-8 pt-8">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Resume Management</h3>
                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 shrink-0">
                                 <FileText size={24} />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0 w-full">
                                 {resumeFile ? (
                                     <div>
                                         <p className="font-bold text-indigo-700 text-sm">Selected for Upload:</p>
@@ -152,11 +152,11 @@ const Profile = ({
                                     <p className="text-gray-500 italic text-sm">No resume uploaded yet</p>
                                 )}
                             </div>
-                            <div>
+                            <div className="w-full md:w-auto">
                                 <button
                                     type="button"
                                     onClick={() => document.getElementById('resume-upload').click()}
-                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition shadow-sm"
+                                    className="w-full md:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition shadow-sm"
                                 >
                                     {resumeFile ? 'Change Selection' : 'Upload Resume'}
                                 </button>

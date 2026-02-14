@@ -57,7 +57,7 @@ const JobApplications = ({ myApplications }) => {
                                             <h3 className="font-bold text-gray-900">{app.job_title}</h3>
                                             <p className="text-sm text-gray-500">{app.company_name}</p>
                                         </div>
-                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-green-100 text-green-700' :
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${app.status === 'Accepted' || app.status === 'Interviewing' ? 'bg-green-100 text-green-700' :
                                             app.status === 'Rejected' ? 'bg-red-100 text-red-700' :
                                                 'bg-blue-100 text-blue-700'
                                             }`}>

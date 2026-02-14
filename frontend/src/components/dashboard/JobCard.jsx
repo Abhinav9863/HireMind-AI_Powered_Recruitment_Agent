@@ -13,18 +13,18 @@ const JobCard = ({ job, myApplications, handleApply }) => {
             {/* Standard Card Content */}
             <div className="flex flex-col h-full">
                 <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center font-bold text-lg text-indigo-600 shadow-sm">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center font-bold text-lg text-indigo-600 shadow-sm shrink-0">
                         {job.company.substring(0, 2).toUpperCase()}
                     </div>
-                    <div className="flex flex-wrap gap-2 justify-end">
-                        <span className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold">
+                    <div className="flex flex-wrap gap-2 justify-end ml-4">
+                        <span className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
                             {job.job_type}
                         </span>
-                        <span className={`px-3 py-1.5 rounded-xl text-xs font-bold ${job.work_location === 'Remote' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
+                        <span className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap ${job.work_location === 'Remote' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
                             {job.work_location || 'In-Office'}
                         </span>
                         {job.experience_required !== undefined && (
-                            <span className={`px-3 py-1.5 rounded-xl text-xs font-bold ${job.experience_required === 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                            <span className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap ${job.experience_required === 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                                 {job.experience_required === 0 ? 'Freshers Welcome' : `${job.experience_required}+ Years Required`}
                             </span>
                         )}

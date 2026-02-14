@@ -63,9 +63,9 @@ const Profile = ({
                             }}
                         />
                     </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900">{profile.full_name || 'No Name Set'}</h3>
-                        <p className="text-gray-500">{profile.email}</p>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-bold text-gray-900 break-words max-w-full">{profile.full_name || 'No Name Set'}</h3>
+                        <p className="text-gray-500 break-words text-sm sm:text-base overflow-wrap-anywhere max-w-full">{profile.email}</p>
                     </div>
                 </div>
 

@@ -137,8 +137,8 @@ const HrProfile = ({ user, setUser }) => {
                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'photo')} />
                             </label>
                         </div>
-                        <h3 className="font-bold text-gray-900">{user?.full_name || 'HR Manager'}</h3>
-                        <p className="text-sm text-gray-500">{user?.email}</p>
+                        <h3 className="font-bold text-gray-900 break-words max-w-full">{user?.full_name || 'HR Manager'}</h3>
+                        <p className="text-sm text-gray-500 break-words overflow-wrap-anywhere max-w-full">{user?.email}</p>
                     </div>
                 </div>
 

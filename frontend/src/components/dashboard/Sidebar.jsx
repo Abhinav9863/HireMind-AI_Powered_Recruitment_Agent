@@ -16,7 +16,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
             <aside className={`
                 fixed md:relative z-50 h-screen md:h-full w-72 
                 bg-gradient-to-b from-indigo-900 to-violet-900 text-white 
-                transform transition-transform duration-300 ease-in-out shrink-0 font-sans flex flex-col
+                transform transition-transform duration-300 ease-in-out shrink-0 font-sans flex flex-col overflow-hidden
                 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
                 <div className="p-4 md:p-8 relative shrink-0">
@@ -78,7 +78,7 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                     </nav>
                 </div>
 
-                <div className="flex-1 min-h-0 px-4 md:px-8 py-2 md:py-4">
+                <div className="hidden md:flex flex-1 min-h-0 px-4 md:px-8 py-2 md:py-4">
                     <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-6">Candidate<br />Dashboard</h3>
                     <div
                         onClick={() => { setActiveTab('profile'); onClose && onClose(); }}
@@ -108,6 +108,8 @@ const Sidebar = ({ activeTab, setActiveTab, selectedJob, stats, handleLogout, is
                         </div>
                     </div>
                 </div>
+
+                <div className="flex-1 md:hidden"></div>
 
                 <div className="shrink-0 p-4 md:p-8 border-t border-white/10">
                     <button onClick={handleLogout} className="flex items-center gap-3 text-indigo-200 hover:text-white transition-colors text-sm font-medium">
